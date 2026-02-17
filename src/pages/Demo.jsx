@@ -26,8 +26,12 @@ export default function Demo() {
       {/* Navigation */}
       <nav className="border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <Link to={createPageUrl("Home")} className="text-xl font-semibold text-gray-900">
-            DigitalCard
+          <Link to={createPageUrl("Home")}>
+            <img 
+              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6993ef3c029e3c249b7f556c/bfcfbf9dc_main-identra-logo.png" 
+              alt="Identra" 
+              className="h-8"
+            />
           </Link>
           <Link to={createPageUrl("Home")}>
             <Button variant="ghost">Back to Home</Button>

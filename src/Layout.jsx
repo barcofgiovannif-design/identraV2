@@ -41,9 +41,12 @@ export default function Layout({ children, currentPageName }) {
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <Link to={createPageUrl(isAdmin ? 'SuperAdminDashboard' : 'CompanyDashboard')} className="flex items-center gap-2">
-              <Building2 className="w-6 h-6 text-gray-900" />
-              <span className="text-xl font-bold text-gray-900">DigitalCard</span>
+            <Link to={createPageUrl(isAdmin ? 'SuperAdminDashboard' : 'CompanyDashboard')} className="flex items-center">
+              <img 
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6993ef3c029e3c249b7f556c/bfcfbf9dc_main-identra-logo.png" 
+                alt="Identra" 
+                className="h-8"
+              />
             </Link>
 
             {/* Navigation Links */}

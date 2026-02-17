@@ -68,7 +68,11 @@ export default function Home() {
       {/* Navigation */}
       <nav className="border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <div className="text-xl font-semibold text-gray-900">DigitalCard</div>
+          <img 
+            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6993ef3c029e3c249b7f556c/bfcfbf9dc_main-identra-logo.png" 
+            alt="Identra" 
+            className="h-8"
+          />
           <div className="flex gap-4 items-center">
             <Button 
               variant="ghost" 
@@ -330,7 +334,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-gray-100 py-12">
         <div className="max-w-7xl mx-auto px-6 text-center text-gray-600">
-          <p>© 2026 DigitalCard. All rights reserved.</p>
+          <p>© 2026 Identra. All rights reserved.</p>
         </div>
       </footer>
     </div>
