@@ -1,14 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import QRCode from 'npm:qrcode@1.5.3';
-
-function generateSlug(fullName) {
-  const base = fullName
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-  const random = Math.random().toString(36).substring(2, 8);
-  return `${base}-${random}`;
-}
+import { nanoid } from 'npm:nanoid@5.0.4';
 
 Deno.serve(async (req) => {
   try {
@@ -22,66 +14,69 @@ Deno.serve(async (req) => {
     const payload = await req.json();
     const { company_id, full_name, title, company_name, phone, email, overview, social_links, messaging_links } = payload;
 
-    // Get company to check available slots
-    const company = await base44.entities.Company.get(company_id);
-    if (!company) {
+    // Verify company ownership
+    const company = await base44.asServiceRole.entities.Company.filter({ id: company_id });
+    if (!company || company.length === 0) {
       return Response.json({ error: 'Company not found' }, { status: 404 });
     }
 
-    if (company.used_urls >= company.purchased_urls) {
-      return Response.json({ error: 'No available URL slots' }, { status: 400 });
+    const companyData = company[0];
+
+    // Check if company has available URL slots
+    if (companyData.used_urls >= companyData.purchased_urls) {
+      return Response.json({ error: 'No available URL slots. Upgrade your plan.' }, { status: 400 });
     }
 
-    // Generate permanent slug
-    const permanentSlug = generateSlug(full_name);
+    // Generate permanent unique slug
+    const slug = nanoid(10);
+    const cardUrl = `${new URL(req.url).origin}/card/${slug}`;
 
     // Generate QR code
-    const cardUrl = `${req.headers.get('origin')}/card/${permanentSlug}`;
     const qrCodeDataUrl = await QRCode.toDataURL(cardUrl, {
       width: 512,
       margin: 2,
       color: {
-        dark: company.brand_color || '#000000',
+        dark: companyData.brand_color || '#000000',
         light: '#FFFFFF'
       }
     });
 
-    // Convert data URL to blob and upload
-    const base64Data = qrCodeDataUrl.split(',')[1];
-    const binaryData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
-    const qrBlob = new Blob([binaryData], { type: 'image/png' });
-    const qrFile = new File([qrBlob], `qr-${permanentSlug}.png`, { type: 'image/png' });
-
+    // Upload QR to storage
+    const qrBase64 = qrCodeDataUrl.split(',')[1];
+    const qrBlob = Uint8Array.from(atob(qrBase64), c => c.charCodeAt(0));
+    const qrFile = new File([qrBlob], `qr-${slug}.png`, { type: 'image/png' });
+    
     const { file_url: qr_code_url } = await base44.asServiceRole.integrations.Core.UploadFile({ file: qrFile });
 
     // Create digital card
     const card = await base44.asServiceRole.entities.DigitalCard.create({
       company_id,
-      permanent_slug: permanentSlug,
+      permanent_slug: slug,
       full_name,
       title,
       company_name,
       phone,
       email,
       overview,
-      social_links: social_links || {},
-      messaging_links: messaging_links || {},
+      social_links,
+      messaging_links,
       qr_code_url,
       status: 'active'
     });
 
-    // Update company's used_urls count
+    // Update company used_urls count
     await base44.asServiceRole.entities.Company.update(company_id, {
-      used_urls: company.used_urls + 1
+      used_urls: companyData.used_urls + 1
     });
 
     return Response.json({ 
       success: true, 
       card,
-      card_url: cardUrl 
+      card_url: cardUrl
     });
 
   } catch (error) {
+    console.error('Error creating digital card:', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });
