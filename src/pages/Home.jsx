@@ -252,7 +252,7 @@ export default function Home() {
               <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
               <div className="mb-6">
                 <span className="text-5xl font-bold text-gray-900">${plan.price}</span>
-                <span className="text-gray-600 ml-2">/ one-time</span>
+                <span className="text-gray-600 ml-2">/ year</span>
               </div>
               <div className="text-gray-600 mb-6">{plan.urls} permanent URLs</div>
               <Link to={createPageUrl("Checkout") + `?plan=${plan.name.toLowerCase()}`}>
