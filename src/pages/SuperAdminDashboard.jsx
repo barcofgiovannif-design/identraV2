@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import CompaniesTable from "../components/admin/CompaniesTable";
 import RevenueChart from "../components/admin/RevenueChart";
 import GenerateCardsModal from "../components/admin/GenerateCardsModal";
+import AllCardsTable from "../components/admin/AllCardsTable";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 export default function SuperAdminDashboard() {
@@ -98,12 +99,17 @@ export default function SuperAdminDashboard() {
         <Tabs defaultValue="companies" className="space-y-6">
           <TabsList className="bg-white border border-gray-200">
             <TabsTrigger value="companies">Companies</TabsTrigger>
+            <TabsTrigger value="cards">Digital Cards</TabsTrigger>
             <TabsTrigger value="revenue">Revenue</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
 
           <TabsContent value="companies">
             <CompaniesTable companies={companies} />
+          </TabsContent>
+
+          <TabsContent value="cards">
+            <AllCardsTable cards={allCards} companies={companies} />
           </TabsContent>
 
           <TabsContent value="revenue">
