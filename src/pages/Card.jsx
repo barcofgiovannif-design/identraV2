@@ -23,21 +23,16 @@ export default function CardPage() {
         return;
       }
 
-      const cards = await base44.entities.DigitalCard.filter({ permanent_slug: slug });
+      // Use public endpoint to fetch card data without authentication
+      const response = await base44.functions.invoke('getPublicCard', { slug });
       
-      if (cards.length === 0) {
+      if (!response.data || !response.data.card) {
         setLoading(false);
         return;
       }
 
-      const cardData = cards[0];
-      setCard(cardData);
-
-      const companies = await base44.entities.Company.filter({ id: cardData.company_id });
-      if (companies.length > 0) {
-        setCompany(companies[0]);
-      }
-
+      setCard(response.data.card);
+      setCompany(response.data.company);
       setLoading(false);
     } catch (error) {
       console.error('Error loading card:', error);
