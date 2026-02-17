@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { createPageUrl } from "./utils";
+import { createPageUrl } from "../utils";
 import { Button } from "@/components/ui/button";
 import { Check, QrCode, Users, Zap, Shield, Sparkles } from "lucide-react";
 
