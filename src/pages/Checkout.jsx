@@ -76,7 +76,7 @@ export default function Checkout() {
           transition={{ duration: 0.6 }}
         >
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Choose Your Package</h1>
-          <p className="text-lg text-gray-600">One-time purchase for permanent digital business cards</p>
+          <p className="text-lg text-gray-600">Annual subscription for permanent digital business cards</p>
         </motion.div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
@@ -101,7 +101,7 @@ export default function Checkout() {
                 <CardTitle className="text-2xl">{plan.name}</CardTitle>
                 <div className="mt-4">
                   <span className="text-4xl font-bold text-gray-900">${plan.price}</span>
-                  <span className="text-gray-600 ml-2">one-time</span>
+                  <span className="text-gray-600 ml-2">/ year</span>
                 </div>
                 <div className="mt-2">
                   <Badge className="bg-gray-100 text-gray-900">
