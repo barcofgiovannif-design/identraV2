@@ -69,9 +69,12 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           <div className="text-xl font-semibold text-gray-900">DigitalCard</div>
           <div className="flex gap-4 items-center">
-            <Link to={createPageUrl("Login")}>
-              <Button variant="ghost">Sign In</Button>
-            </Link>
+            <Button 
+              variant="ghost" 
+              onClick={() => base44.auth.redirectToLogin()}
+            >
+              Sign In
+            </Button>
           </div>
         </div>
       </nav>
