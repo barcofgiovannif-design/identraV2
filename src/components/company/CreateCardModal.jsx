@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { X } from "lucide-react";
+import CardCustomization from "./CardCustomization";
 
 export default function CreateCardModal({ company, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
@@ -16,7 +18,10 @@ export default function CreateCardModal({ company, onClose, onSuccess }) {
     overview: "",
     linkedin: "",
     twitter: "",
-    whatsapp: ""
+    whatsapp: "",
+    template: "modern",
+    font_style: "sans",
+    custom_color: "#000000"
   });
 
   const queryClient = useQueryClient();
@@ -48,7 +53,10 @@ export default function CreateCardModal({ company, onClose, onSuccess }) {
       },
       messaging_links: {
         whatsapp: formData.whatsapp
-      }
+      },
+      template: formData.template,
+      font_style: formData.font_style,
+      custom_color: formData.custom_color
     });
   };
 
@@ -62,10 +70,17 @@ export default function CreateCardModal({ company, onClose, onSuccess }) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Basic Info */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-gray-900">Basic Information</h3>
+        <form onSubmit={handleSubmit} className="p-6">
+          <Tabs defaultValue="basic" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsTrigger value="basic">Basic Info</TabsTrigger>
+              <TabsTrigger value="customization">Customization</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="basic" className="space-y-6">
+              {/* Basic Info */}
+              <div className="space-y-4">
+                <h3 className="font-semibold text-gray-900">Basic Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="full_name">Full Name *</Label>
@@ -160,9 +175,15 @@ export default function CreateCardModal({ company, onClose, onSuccess }) {
               />
             </div>
           </div>
+            </TabsContent>
+
+            <TabsContent value="customization">
+              <CardCustomization formData={formData} setFormData={setFormData} />
+            </TabsContent>
+          </Tabs>
 
           {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t">
+          <div className="flex justify-end gap-3 pt-6 mt-6 border-t">
             <Button type="button" variant="outline" onClick={onClose} className="rounded-lg">
               Cancel
             </Button>

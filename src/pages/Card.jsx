@@ -81,21 +81,58 @@ export default function CardPage() {
     );
   }
 
-  const brandColor = company?.brand_color || '#000000';
+  const brandColor = card.custom_color || company?.brand_color || '#000000';
+  const fontClass = {
+    sans: 'font-sans',
+    serif: 'font-serif',
+    mono: 'font-mono'
+  }[card.font_style || 'sans'];
+
+  const templateStyles = {
+    modern: {
+      bg: 'bg-gradient-to-br from-gray-50 to-gray-100',
+      headerBg: brandColor,
+      cardBg: 'bg-white'
+    },
+    classic: {
+      bg: 'bg-gray-50',
+      headerBg: '#1e293b',
+      cardBg: 'bg-white'
+    },
+    minimal: {
+      bg: 'bg-white',
+      headerBg: '#f8f9fa',
+      cardBg: 'bg-white border-2 border-gray-200'
+    },
+    gradient: {
+      bg: 'bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50',
+      headerBg: `linear-gradient(135deg, ${brandColor} 0%, ${brandColor}CC 100%)`,
+      cardBg: 'bg-white/80 backdrop-blur-sm'
+    }
+  };
+
+  const template = templateStyles[card.template || 'modern'];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-6">
+    <div className={`min-h-screen ${template.bg} py-12 px-6 ${fontClass}`}>
       <div className="max-w-2xl mx-auto">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
         >
-        <Card className="overflow-hidden shadow-xl">
+        <Card className={`overflow-hidden shadow-xl ${template.cardBg}`}>
           {/* Header Section */}
           <motion.div
             className="h-32"
-            style={{ backgroundColor: brandColor }}
+            style={{ 
+              background: typeof template.headerBg === 'string' && template.headerBg.startsWith('linear-gradient') 
+                ? template.headerBg 
+                : undefined,
+              backgroundColor: typeof template.headerBg === 'string' && !template.headerBg.startsWith('linear-gradient')
+                ? template.headerBg
+                : undefined
+            }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6 }}
