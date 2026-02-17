@@ -12,14 +12,21 @@ import BrandingSettings from "../components/company/BrandingSettings";
 export default function CompanyDashboard() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [company, setCompany] = useState(null);
+  const [loading, setLoading] = useState(true);
   const queryClient = useQueryClient();
 
   useEffect(() => {
     const loadCompany = async () => {
-      const user = await base44.auth.me();
-      const companies = await base44.entities.Company.filter({ email: user.email });
-      if (companies.length > 0) {
-        setCompany(companies[0]);
+      try {
+        const user = await base44.auth.me();
+        const companies = await base44.entities.Company.filter({ email: user.email });
+        if (companies.length > 0) {
+          setCompany(companies[0]);
+        }
+      } catch (error) {
+        console.error('Error loading company:', error);
+      } finally {
+        setLoading(false);
       }
     };
     loadCompany();
@@ -31,12 +38,33 @@ export default function CompanyDashboard() {
     enabled: !!company
   });
 
-  if (!company) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading...</h2>
         </div>
+      </div>
+    );
+  }
+
+  if (!company) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card className="max-w-lg mx-6">
+          <CardContent className="py-12 text-center">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">No Company Found</h2>
+            <p className="text-gray-600 mb-6">
+              Your account is not associated with a company yet. Please complete a purchase to create your company account.
+            </p>
+            <Button 
+              onClick={() => window.location.href = '/'}
+              className="bg-gray-900 hover:bg-gray-800"
+            >
+              Go to Home
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
