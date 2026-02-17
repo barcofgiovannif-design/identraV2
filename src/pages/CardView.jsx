@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Mail, Phone, Linkedin, Twitter, MessageCircle, Download, ExternalLink, Loader2 } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function CardView() {
   const [card, setCard] = useState(null);
@@ -90,23 +91,41 @@ export default function CardView() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-6">
       <div className="max-w-2xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+        >
         <Card className="overflow-hidden shadow-xl">
           {/* Header Section */}
-          <div
+          <motion.div
             className="h-32"
             style={{ backgroundColor: brandColor }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6 }}
           />
 
           <CardContent className="pt-0 px-6 pb-6">
             {/* Profile Section */}
             <div className="relative -mt-16 mb-6">
-              <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center text-4xl font-bold shadow-lg mx-auto border-4 border-white"
-                   style={{ color: brandColor }}>
+              <motion.div 
+                className="w-32 h-32 bg-white rounded-full flex items-center justify-center text-4xl font-bold shadow-lg mx-auto border-4 border-white"
+                style={{ color: brandColor }}
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
+              >
                 {card.full_name.charAt(0)}
-              </div>
+              </motion.div>
             </div>
 
-            <div className="text-center mb-6">
+            <motion.div 
+              className="text-center mb-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+            >
               <h1 className="text-3xl font-bold text-gray-900 mb-2">{card.full_name}</h1>
               <p className="text-xl text-gray-600 mb-1">{card.title}</p>
               <p className="text-lg text-gray-500">{card.company_name}</p>
@@ -123,34 +142,56 @@ export default function CardView() {
             )}
 
             {/* Contact Actions */}
-            <div className="space-y-3 mb-6">
+            <motion.div 
+              className="space-y-3 mb-6"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.5 }}
+            >
               {card.email && (
-                <a href={`mailto:${card.email}`} className="block">
+                <motion.a 
+                  href={`mailto:${card.email}`} 
+                  className="block"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
                   <Button variant="outline" className="w-full rounded-lg h-12 justify-start">
                     <Mail className="w-5 h-5 mr-3" />
                     {card.email}
                   </Button>
-                </a>
+                </motion.a>
               )}
 
               {card.phone && (
-                <a href={`tel:${card.phone}`} className="block">
+                <motion.a 
+                  href={`tel:${card.phone}`} 
+                  className="block"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
                   <Button variant="outline" className="w-full rounded-lg h-12 justify-start">
                     <Phone className="w-5 h-5 mr-3" />
                     {card.phone}
                   </Button>
-                </a>
+                </motion.a>
               )}
 
               {card.messaging_links?.whatsapp && (
-                <a href={`https://wa.me/${card.messaging_links.whatsapp}`} target="_blank" rel="noopener noreferrer" className="block">
+                <motion.a 
+                  href={`https://wa.me/${card.messaging_links.whatsapp}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="block"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
                   <Button variant="outline" className="w-full rounded-lg h-12 justify-start">
                     <MessageCircle className="w-5 h-5 mr-3" />
                     WhatsApp
                   </Button>
-                </a>
+                </motion.a>
               )}
-            </div>
+            </motion.div>
 
             {/* Social Links */}
             {(card.social_links?.linkedin || card.social_links?.twitter || card.social_links?.website) && (
@@ -200,10 +241,16 @@ export default function CardView() {
             </Button>
           </CardContent>
         </Card>
+        </motion.div>
 
-        <p className="text-center text-gray-500 text-sm mt-6">
+        <motion.p 
+          className="text-center text-gray-500 text-sm mt-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.8 }}
+        >
           Powered by DigitalCard
-        </p>
+        </motion.p>
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import { createPageUrl } from "../utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Mail, Phone, Linkedin, Twitter, MessageCircle, Download, QrCode, ArrowRight } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function Demo() {
   const demoCard = {
@@ -35,18 +36,27 @@ export default function Demo() {
       </nav>
 
       <div className="max-w-7xl mx-auto px-6 py-16">
-        <div className="text-center mb-16">
+        <motion.div 
+          className="text-center mb-16"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
           <h1 className="text-5xl font-bold text-gray-900 mb-4">
             See It In Action
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             Experience how your team's digital business cards will look and work
           </p>
-        </div>
+        </motion.div>
 
         <div className="grid lg:grid-cols-2 gap-12 items-start">
           {/* Left: Demo Card */}
-          <div>
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Interactive Demo Card</h2>
             <Card className="overflow-hidden shadow-xl">
               {/* Header Section */}
@@ -118,10 +128,15 @@ export default function Demo() {
             <p className="text-center text-gray-500 text-sm mt-4">
               This is a demo - interactions are disabled
             </p>
-          </div>
+          </motion.div>
 
           {/* Right: Features & Benefits */}
-          <div className="space-y-8">
+          <motion.div 
+            className="space-y-8"
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+          >
             <div>
               <h2 className="text-2xl font-bold text-gray-900 mb-6">What Your Cards Include</h2>
               <div className="space-y-6">
@@ -209,7 +224,7 @@ export default function Demo() {
                 </Button>
               </Link>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </div>

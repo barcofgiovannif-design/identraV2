@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Check, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { motion } from "framer-motion";
 
 export default function Checkout() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -68,22 +69,34 @@ export default function Checkout() {
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-6">
       <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-12">
+        <motion.div 
+          className="text-center mb-12"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Choose Your Package</h1>
           <p className="text-lg text-gray-600">One-time purchase for permanent digital business cards</p>
-        </div>
+        </motion.div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          {plans.map((plan) => (
-            <Card
+          {plans.map((plan, index) => (
+            <motion.div
               key={plan.id}
-              className={`cursor-pointer transition-all ${
-                selectedPlan?.id === plan.id
-                  ? 'border-2 border-gray-900 shadow-lg'
-                  : 'border-2 border-transparent hover:border-gray-300'
-              }`}
-              onClick={() => setSelectedPlan(plan)}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: index * 0.1 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.98 }}
             >
+              <Card
+                className={`cursor-pointer transition-all h-full ${
+                  selectedPlan?.id === plan.id
+                    ? 'border-2 border-gray-900 shadow-lg'
+                    : 'border-2 border-transparent hover:border-gray-300'
+                }`}
+                onClick={() => setSelectedPlan(plan)}
+              >
               <CardHeader>
                 <CardTitle className="text-2xl">{plan.name}</CardTitle>
                 <div className="mt-4">
@@ -107,10 +120,16 @@ export default function Checkout() {
                 </ul>
               </CardContent>
             </Card>
+            </motion.div>
           ))}
         </div>
 
         {selectedPlan && (
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
           <Card className="max-w-2xl mx-auto">
             <CardHeader>
               <CardTitle>Complete Your Purchase</CardTitle>
@@ -184,6 +203,7 @@ export default function Checkout() {
               </form>
             </CardContent>
           </Card>
+          </motion.div>
         )}
       </div>
     </div>
