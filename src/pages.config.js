@@ -50,15 +50,21 @@
 import Home from './pages/Home';
 import CompanyDashboard from './pages/CompanyDashboard';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
+import Checkout from './pages/Checkout';
+import CardView from './pages/CardView';
+import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "Home": Home,
     "CompanyDashboard": CompanyDashboard,
     "SuperAdminDashboard": SuperAdminDashboard,
+    "Checkout": Checkout,
+    "CardView": CardView,
 }
 
 export const pagesConfig = {
     mainPage: "Home",
     Pages: PAGES,
+    Layout: __Layout,
 };
