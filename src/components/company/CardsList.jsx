@@ -68,7 +68,7 @@ export default function CardsList({ cards, company, isLoading }) {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => window.open(`/card/${card.permanent_slug}`, '_blank')}
+                  onClick={() => window.open(`/Card/${card.permanent_slug}`, '_blank')}
                   className="rounded-lg"
                 >
                   <ExternalLink className="w-4 h-4" />
