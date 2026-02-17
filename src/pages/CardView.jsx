@@ -132,7 +132,7 @@ export default function CardView() {
               {company?.logo_url && (
                 <img src={company.logo_url} alt="Company logo" className="h-12 object-contain mx-auto mt-4" />
               )}
-            </div>
+            </motion.div>
 
             {/* Overview */}
             {card.overview && (
