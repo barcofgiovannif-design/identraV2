@@ -52,6 +52,9 @@ import CompanyDashboard from './pages/CompanyDashboard';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import Checkout from './pages/Checkout';
 import CardView from './pages/CardView';
+import Demo from './pages/Demo';
+import Verify from './pages/Verify';
+import Success from './pages/Success';
 import __Layout from './Layout.jsx';
 
 
@@ -61,6 +64,9 @@ export const PAGES = {
     "SuperAdminDashboard": SuperAdminDashboard,
     "Checkout": Checkout,
     "CardView": CardView,
+    "Demo": Demo,
+    "Verify": Verify,
+    "Success": Success,
 }
 
 export const pagesConfig = {
