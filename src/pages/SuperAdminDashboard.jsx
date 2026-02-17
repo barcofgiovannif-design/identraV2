@@ -2,12 +2,15 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2, Link as LinkIcon, DollarSign, Users } from "lucide-react";
+import { Building2, Link as LinkIcon, DollarSign, Users, QrCode } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import CompaniesTable from "../components/admin/CompaniesTable";
 import RevenueChart from "../components/admin/RevenueChart";
+import GenerateCardsModal from "../components/admin/GenerateCardsModal";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 export default function SuperAdminDashboard() {
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
   const { data: companies = [] } = useQuery({
     queryKey: ['companies'],
     queryFn: () => base44.entities.Company.list()
@@ -58,9 +61,18 @@ export default function SuperAdminDashboard() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Super Admin Dashboard</h1>
-          <p className="text-gray-600">Platform overview and company management</p>
+        <div className="mb-8 flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Super Admin Dashboard</h1>
+            <p className="text-gray-600">Platform overview and company management</p>
+          </div>
+          <Button 
+            onClick={() => setShowGenerateModal(true)}
+            className="bg-gray-900 hover:bg-gray-800"
+          >
+            <QrCode className="w-4 h-4 mr-2" />
+            Generate Cards
+          </Button>
         </div>
 
         {/* Stats Grid */}
@@ -128,6 +140,12 @@ export default function SuperAdminDashboard() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        <GenerateCardsModal 
+          isOpen={showGenerateModal}
+          onClose={() => setShowGenerateModal(false)}
+          companies={companies}
+        />
       </div>
     </div>
   );
