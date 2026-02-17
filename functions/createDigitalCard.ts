@@ -12,7 +12,7 @@ Deno.serve(async (req) => {
     }
 
     const payload = await req.json();
-    const { company_id, full_name, title, company_name, phone, email, overview, social_links, messaging_links } = payload;
+    const { company_id, full_name, title, company_name, phone, email, overview, social_links, messaging_links, template, font_style, custom_color } = payload;
 
     // Verify company ownership
     const company = await base44.asServiceRole.entities.Company.filter({ id: company_id });
@@ -61,7 +61,10 @@ Deno.serve(async (req) => {
       social_links,
       messaging_links,
       qr_code_url,
-      status: 'active'
+      status: 'active',
+      template: template || 'modern',
+      font_style: font_style || 'sans',
+      custom_color: custom_color || '#000000'
     });
 
     // Update company used_urls count
