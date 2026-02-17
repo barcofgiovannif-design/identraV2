@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
     }
 
     // Add card URL
-    const cardUrl = `${new URL(req.url).origin}/card/${card.permanent_slug}`;
+    const cardUrl = `${new URL(req.url).origin}/Card/${card.permanent_slug}`;
     vcard += `URL;TYPE=DigitalCard:${cardUrl}\n`;
 
     vcard += 'END:VCARD';

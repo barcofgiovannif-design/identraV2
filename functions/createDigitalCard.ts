@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
 
     // Generate permanent unique slug
     const slug = nanoid(10);
-    const cardUrl = `${new URL(req.url).origin}/card/${slug}`;
+    const cardUrl = `${new URL(req.url).origin}/Card/${slug}`;
 
     // Generate QR code
     const qrCodeDataUrl = await QRCode.toDataURL(cardUrl, {

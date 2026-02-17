@@ -115,7 +115,7 @@ export default function AllCardsTable({ cards, companies }) {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => window.open(`/card/${card.permanent_slug}`, '_blank')}
+                            onClick={() => window.open(`/Card/${card.permanent_slug}`, '_blank')}
                             title="View Card"
                           >
                             <ExternalLink className="w-4 h-4" />

@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
     // Generate empty cards with unique slugs and QR codes
     for (let i = 0; i < quantity; i++) {
       const slug = nanoid(10);
-      const cardUrl = `${origin}/card/${slug}`;
+      const cardUrl = `${origin}/Card/${slug}`;
 
       // Generate QR code
       const qrCodeDataUrl = await QRCode.toDataURL(cardUrl, {
