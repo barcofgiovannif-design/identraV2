@@ -39,27 +39,38 @@ export default function Home() {
     {
       name: "Starter",
       urls: 5,
-      price: 49,
-      features: ["5 permanent URLs", "5 QR codes", "Unlimited updates", "Company branding", "vCard downloads"]
+      monthly: 29,
+      annual: 349,
+      features: ["5 permanent URLs", "5 NFC engraved cards", "Unlimited updates", "Company branding", "vCard downloads"]
     },
     {
       name: "Growth",
       urls: 10,
-      price: 89,
+      monthly: 59,
+      annual: 699,
       popular: true,
-      features: ["10 permanent URLs", "10 QR codes", "Unlimited updates", "Company branding", "vCard downloads", "Priority support"]
+      features: ["10 permanent URLs", "10 NFC engraved cards", "Unlimited updates", "Company branding", "vCard downloads", "Priority support"]
     },
     {
       name: "Pro",
       urls: 20,
-      price: 159,
-      features: ["20 permanent URLs", "20 QR codes", "Unlimited updates", "Company branding", "vCard downloads", "Priority support", "Analytics"]
+      monthly: 109,
+      annual: 1299,
+      features: ["20 permanent URLs", "20 NFC engraved cards", "Unlimited updates", "Company branding", "vCard downloads", "Priority support", "Analytics"]
     },
     {
-      name: "Enterprise",
+      name: "Team 40",
+      urls: 40,
+      monthly: 249,
+      annual: 2999,
+      features: ["40 permanent URLs", "40 NFC engraved cards", "Unlimited updates", "Company branding", "vCard downloads", "Priority support", "Analytics"]
+    },
+    {
+      name: "Enterprise 50",
       urls: 50,
-      price: 349,
-      features: ["50 permanent URLs", "50 QR codes", "Unlimited updates", "Company branding", "vCard downloads", "Priority support", "Analytics", "Dedicated account manager"]
+      monthly: 329,
+      annual: 3999,
+      features: ["50 permanent URLs", "50 NFC engraved cards", "Unlimited updates", "Company branding", "vCard downloads", "Priority support", "Analytics", "Dedicated account manager"]
     }
   ];
 
@@ -224,7 +235,7 @@ export default function Home() {
             Purchase permanent digital identity slots for your team
           </p>
         </motion.div>
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-6">
           {plans.map((plan, index) => (
             <motion.div
               key={index}
@@ -250,10 +261,11 @@ export default function Home() {
                 </motion.div>
               )}
               <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
-              <div className="mb-6">
-                <span className="text-5xl font-bold text-gray-900">${plan.price}</span>
-                <span className="text-gray-600 ml-2">/ year</span>
+              <div className="mb-2">
+                <span className="text-5xl font-bold text-gray-900">${plan.monthly}</span>
+                <span className="text-gray-600 ml-2">/ month</span>
               </div>
+              <div className="text-sm text-gray-500 mb-6">Billed annually (${plan.annual})</div>
               <div className="text-gray-600 mb-6">{plan.urls} permanent URLs</div>
               <Link to={createPageUrl("Checkout") + `?plan=${plan.name.toLowerCase()}`}>
                 <Button
