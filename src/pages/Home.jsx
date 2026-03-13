@@ -41,7 +41,7 @@ export default function Home() {
       urls: 5,
       monthly: 29,
       annual: 349,
-      features: ["5 permanent URLs", "5 NFC engraved cards", "Unlimited updates", "Company branding", "vCard downloads"]
+      features: ["5 permanent URLs", "5 engraved executive metal NFC cards", "Unlimited updates", "Company branding", "vCard downloads"]
     },
     {
       name: "Growth",
@@ -49,28 +49,28 @@ export default function Home() {
       monthly: 59,
       annual: 699,
       popular: true,
-      features: ["10 permanent URLs", "10 NFC engraved cards", "Unlimited updates", "Company branding", "vCard downloads", "Priority support"]
+      features: ["10 permanent URLs", "10 engraved executive metal NFC cards", "Unlimited updates", "Company branding", "vCard downloads", "Priority support"]
     },
     {
       name: "Pro",
       urls: 20,
       monthly: 109,
       annual: 1299,
-      features: ["20 permanent URLs", "20 NFC engraved cards", "Unlimited updates", "Company branding", "vCard downloads", "Priority support", "Analytics"]
+      features: ["20 permanent URLs", "20 engraved executive metal NFC cards", "Unlimited updates", "Company branding", "vCard downloads", "Priority support", "Analytics"]
     },
     {
       name: "Team 40",
       urls: 40,
       monthly: 249,
       annual: 2999,
-      features: ["40 permanent URLs", "40 NFC engraved cards", "Unlimited updates", "Company branding", "vCard downloads", "Priority support", "Analytics"]
+      features: ["40 permanent URLs", "40 engraved executive metal NFC cards", "Unlimited updates", "Company branding", "vCard downloads", "Priority support", "Analytics"]
     },
     {
       name: "Enterprise 50",
       urls: 50,
       monthly: 329,
       annual: 3999,
-      features: ["50 permanent URLs", "50 NFC engraved cards", "Unlimited updates", "Company branding", "vCard downloads", "Priority support", "Analytics", "Dedicated account manager"]
+      features: ["50 permanent URLs", "50 engraved executive metal NFC cards", "Unlimited updates", "Company branding", "vCard downloads", "Priority support", "Analytics", "Dedicated account manager"]
     }
   ];
 
