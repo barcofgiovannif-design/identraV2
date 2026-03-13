@@ -53,23 +53,23 @@ export default function Home() {
     },
     {
       name: "Pro",
-      urls: 20,
-      monthly: 109,
-      annual: 1299,
-      features: ["20 permanent URLs", "20 engraved executive metal NFC cards", "Unlimited updates", "Company branding", "vCard downloads", "Priority support", "Analytics"]
+      urls: 30,
+      monthly: 175,
+      annual: 2099,
+      features: ["30 permanent URLs", "30 engraved executive metal NFC cards", "Unlimited updates", "Company branding", "vCard downloads", "Priority support", "Analytics"]
     },
     {
       name: "Team 40",
       urls: 40,
-      monthly: 249,
-      annual: 2999,
+      monthly: 233,
+      annual: 2799,
       features: ["40 permanent URLs", "40 engraved executive metal NFC cards", "Unlimited updates", "Company branding", "vCard downloads", "Priority support", "Analytics"]
     },
     {
       name: "Enterprise 50",
       urls: 50,
-      monthly: 329,
-      annual: 3999,
+      monthly: 291,
+      annual: 3499,
       features: ["50 permanent URLs", "50 engraved executive metal NFC cards", "Unlimited updates", "Company branding", "vCard downloads", "Priority support", "Analytics", "Dedicated account manager"]
     }
   ];
