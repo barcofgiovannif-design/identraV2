@@ -85,12 +85,6 @@ export default function Home() {
             className="h-8"
           />
           <div className="flex gap-4 items-center">
-            <Button 
-              variant="ghost" 
-              onClick={() => base44.auth.redirectToLogin()}
-            >
-              Sign In
-            </Button>
           </div>
         </div>
       </nav>
