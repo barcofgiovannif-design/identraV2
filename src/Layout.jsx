@@ -28,7 +28,7 @@ export default function Layout({ children, currentPageName }) {
   };
 
   // Public pages (no layout needed)
-  const publicPages = ['Home', 'Login', 'Checkout', 'CardView'];
+  const publicPages = ['Home', 'Login', 'Checkout', 'CardView', 'Demo'];
   if (publicPages.includes(currentPageName)) {
     return <>{children}</>;
   }
