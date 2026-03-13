@@ -30,6 +30,11 @@ export default function Demo() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
+          <Link to={createPageUrl("Home")} className="inline-block mb-6">
+            <Button variant="outline" className="rounded-lg">
+              ← Back to Home
+            </Button>
+          </Link>
           <h1 className="text-5xl font-bold text-gray-900 mb-4">
             See It In Action
           </h1>
