@@ -184,12 +184,12 @@ export default function Home() {
             Professional digital identity infrastructure built for scale
           </p>
         </motion.div>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 justify-items-center">
+        <div className="grid md:grid-cols-2 lg:grid-cols-6 gap-8">
           {features.map((feature, index) => (
             <motion.div 
               key={index} 
-              className={`bg-white p-8 rounded-2xl border border-gray-100 hover:shadow-xl transition-shadow w-full ${
-                index >= 3 ? 'md:col-span-1 lg:col-span-1 md:max-w-md lg:max-w-none' : ''
+              className={`bg-white p-8 rounded-2xl border border-gray-100 hover:shadow-xl transition-shadow ${
+                index < 3 ? 'md:col-span-1 lg:col-span-2' : 'md:col-span-1 lg:col-span-3'
               }`}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
