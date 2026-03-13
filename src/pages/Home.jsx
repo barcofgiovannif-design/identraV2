@@ -184,17 +184,40 @@ export default function Home() {
             Professional digital identity infrastructure built for scale
           </p>
         </motion.div>
-        <div className="grid md:grid-cols-2 lg:grid-cols-6 gap-8">
-          {features.map((feature, index) => (
+        <div className="flex flex-wrap justify-center gap-8">
+          {features.slice(0, 3).map((feature, index) => (
             <motion.div 
               key={index} 
-              className={`bg-white p-8 rounded-2xl border border-gray-100 hover:shadow-xl transition-shadow ${
-                index < 3 ? 'md:col-span-1 lg:col-span-2' : 'md:col-span-1 lg:col-span-3'
-              }`}
+              className="bg-white p-8 rounded-2xl border border-gray-100 hover:shadow-xl transition-shadow w-full md:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-sm"
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
+              whileHover={{ y: -5 }}
+            >
+              <motion.div 
+                className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mb-4"
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                transition={{ type: "spring", stiffness: 400 }}
+              >
+                <feature.icon className="w-6 h-6 text-gray-900" />
+              </motion.div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                {feature.title}
+              </h3>
+              <p className="text-gray-600">
+                {feature.description}
+              </p>
+            </motion.div>
+          ))}
+          {features.slice(3).map((feature, index) => (
+            <motion.div 
+              key={index + 3} 
+              className="bg-white p-8 rounded-2xl border border-gray-100 hover:shadow-xl transition-shadow w-full md:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-sm"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: (index + 3) * 0.1 }}
               whileHover={{ y: -5 }}
             >
               <motion.div 
