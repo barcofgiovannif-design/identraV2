@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Check, Loader2 } from "lucide-react";
+import { Check, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 
@@ -15,6 +15,7 @@ export default function Checkout() {
 
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [formData, setFormData] = useState({
     company_name: "",
     email: "",
@@ -28,10 +29,38 @@ export default function Checkout() {
 
   React.useEffect(() => {
     if (plans.length > 0 && planParam) {
-      const plan = plans.find(p => p.name.toLowerCase() === planParam.toLowerCase());
-      if (plan) setSelectedPlan(plan);
+      const planIndex = plans.findIndex(p => p.name.toLowerCase() === planParam.toLowerCase());
+      if (planIndex !== -1) {
+        setSelectedPlan(plans[planIndex]);
+        setCurrentIndex(planIndex);
+      }
+    } else if (plans.length > 0 && !selectedPlan) {
+      setSelectedPlan(plans[0]);
+      setCurrentIndex(0);
     }
   }, [plans, planParam]);
+
+  const handlePrevious = () => {
+    const newIndex = currentIndex > 0 ? currentIndex - 1 : plans.length - 1;
+    setCurrentIndex(newIndex);
+    setSelectedPlan(plans[newIndex]);
+  };
+
+  const handleNext = () => {
+    const newIndex = currentIndex < plans.length - 1 ? currentIndex + 1 : 0;
+    setCurrentIndex(newIndex);
+    setSelectedPlan(plans[newIndex]);
+  };
+
+  const getVisiblePlans = () => {
+    if (plans.length === 0) return [];
+    
+    const prev = currentIndex > 0 ? plans[currentIndex - 1] : plans[plans.length - 1];
+    const current = plans[currentIndex];
+    const next = currentIndex < plans.length - 1 ? plans[currentIndex + 1] : plans[0];
+    
+    return [prev, current, next];
+  };
 
   const handleCheckout = async (e) => {
     e.preventDefault();
@@ -79,49 +108,108 @@ export default function Checkout() {
           <p className="text-lg text-gray-600">Annual subscription for permanent digital business cards</p>
         </motion.div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          {plans.map((plan, index) => (
-            <motion.div
-              key={plan.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: index * 0.1 }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.98 }}
+        <div className="relative max-w-5xl mx-auto mb-12">
+          <div className="flex items-center justify-center gap-4">
+            {/* Left Arrow */}
+            <button
+              onClick={handlePrevious}
+              className="flex-shrink-0 w-12 h-12 rounded-full bg-white border-2 border-gray-300 hover:border-gray-900 flex items-center justify-center transition-all hover:shadow-lg z-10"
+              aria-label="Previous plan"
             >
-              <Card
-                className={`cursor-pointer transition-all h-full ${
-                  selectedPlan?.id === plan.id
-                    ? 'border-2 border-gray-900 shadow-lg'
-                    : 'border-2 border-transparent hover:border-gray-300'
+              <ChevronLeft className="w-6 h-6 text-gray-900" />
+            </button>
+
+            {/* Carousel Container */}
+            <div className="flex items-center gap-4 overflow-hidden flex-1 max-w-4xl">
+              {getVisiblePlans().map((plan, idx) => {
+                const isCenter = idx === 1;
+                const scale = isCenter ? 1 : 0.85;
+                const opacity = isCenter ? 1 : 0.5;
+                
+                return (
+                  <motion.div
+                    key={plan.id}
+                    className="flex-shrink-0"
+                    style={{ width: '33.333%' }}
+                    initial={false}
+                    animate={{ 
+                      scale,
+                      opacity,
+                      zIndex: isCenter ? 20 : 10
+                    }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <Card
+                      className={`cursor-pointer transition-all ${
+                        isCenter
+                          ? 'border-2 border-gray-900 shadow-2xl'
+                          : 'border-2 border-gray-200'
+                      }`}
+                      onClick={() => {
+                        if (!isCenter) {
+                          idx === 0 ? handlePrevious() : handleNext();
+                        }
+                      }}
+                    >
+                      <CardHeader>
+                        <CardTitle className="text-xl lg:text-2xl">{plan.name}</CardTitle>
+                        <div className="mt-4">
+                          <span className="text-3xl lg:text-4xl font-bold text-gray-900">${plan.price}</span>
+                          <span className="text-gray-600 ml-2 text-sm">/ year</span>
+                        </div>
+                        <div className="mt-2">
+                          <Badge className="bg-gray-100 text-gray-900 text-xs">
+                            {plan.url_count} URLs
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <ul className="space-y-2">
+                          {plan.features?.slice(0, 5).map((feature, idx) => (
+                            <li key={idx} className="flex items-start gap-2 text-xs lg:text-sm">
+                              <Check className="w-3 h-3 lg:w-4 lg:h-4 text-gray-900 mt-0.5 flex-shrink-0" />
+                              <span className="text-gray-600">{feature}</span>
+                            </li>
+                          ))}
+                          {plan.features?.length > 5 && (
+                            <li className="text-xs text-gray-500 italic">
+                              +{plan.features.length - 5} more features
+                            </li>
+                          )}
+                        </ul>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                );
+              })}
+            </div>
+
+            {/* Right Arrow */}
+            <button
+              onClick={handleNext}
+              className="flex-shrink-0 w-12 h-12 rounded-full bg-white border-2 border-gray-300 hover:border-gray-900 flex items-center justify-center transition-all hover:shadow-lg z-10"
+              aria-label="Next plan"
+            >
+              <ChevronRight className="w-6 h-6 text-gray-900" />
+            </button>
+          </div>
+
+          {/* Dots Indicator */}
+          <div className="flex justify-center gap-2 mt-8">
+            {plans.map((plan, idx) => (
+              <button
+                key={plan.id}
+                onClick={() => {
+                  setCurrentIndex(idx);
+                  setSelectedPlan(plans[idx]);
+                }}
+                className={`w-2 h-2 rounded-full transition-all ${
+                  idx === currentIndex ? 'bg-gray-900 w-8' : 'bg-gray-300'
                 }`}
-                onClick={() => setSelectedPlan(plan)}
-              >
-              <CardHeader>
-                <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                <div className="mt-4">
-                  <span className="text-4xl font-bold text-gray-900">${plan.price}</span>
-                  <span className="text-gray-600 ml-2">/ year</span>
-                </div>
-                <div className="mt-2">
-                  <Badge className="bg-gray-100 text-gray-900">
-                    {plan.url_count} URLs
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-3">
-                  {plan.features?.map((feature, idx) => (
-                    <li key={idx} className="flex items-start gap-2 text-sm">
-                      <Check className="w-4 h-4 text-gray-900 mt-0.5 flex-shrink-0" />
-                      <span className="text-gray-600">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-            </motion.div>
-          ))}
+                aria-label={`Go to ${plan.name}`}
+              />
+            ))}
+          </div>
         </div>
 
         {selectedPlan && (
