@@ -13,17 +13,18 @@ export default function Success() {
     console.log('[Success] Page loaded. session_id:', sessionId);
 
     if (sessionId) {
-      // Debug: verify the webhook was processed by checking if a purchase was created
-      base44.entities.Purchase.filter({ stripe_session_id: sessionId })
-        .then(purchases => {
+      const checkPurchase = async () => {
+        try {
+          const purchases = await base44.entities.Purchase.filter({ stripe_session_id: sessionId });
           console.log('[Success] Purchases found for session:', purchases);
           if (!purchases || purchases.length === 0) {
             console.warn('[Success] No purchase record found yet — webhook may not have fired or failed.');
           }
-        })
-        .catch(err => {
+        } catch (err) {
           console.error('[Success] Error checking purchase record:', err?.message, err);
-        });
+        }
+      };
+      checkPurchase();
     }
   }, []);
 
