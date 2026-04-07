@@ -160,6 +160,7 @@ Deno.serve(async (req) => {
           to: customer_email,
           subject: `Invoice ${invoiceNumber} - Payment Confirmed`,
           body: emailHTML,
+          from_name: 'Identra'
         });
         console.log('[Webhook] Invoice email sent to customer:', customer_email);
 
@@ -174,6 +175,7 @@ Deno.serve(async (req) => {
             to: adminEmail,
             subject: `[ADMIN] Invoice ${invoiceNumber} - New Payment Received`,
             body: adminEmailHTML,
+            from_name: 'Identra'
           });
           console.log('[Webhook] Admin notification sent to:', adminEmail);
         }
