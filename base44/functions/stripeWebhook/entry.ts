@@ -73,14 +73,18 @@ Deno.serve(async (req) => {
 
       console.log('[Webhook] Purchase recorded for:', customer_email);
 
-      // Send confirmation email
+      // Send professional invoice email
       try {
-        await base44.integrations.Core.SendEmail({
-          to: customer_email,
-          subject: 'Payment Confirmed - Welcome to Identra',
-          body: `Thank you for your purchase! You now have ${url_count} digital card slots available.`,
+        await base44.asServiceRole.functions.invoke('sendInvoiceEmail', {
+          customer_email,
+          customer_name: session.metadata.customer_name || customer_email.split('@')[0],
+          plan_name,
+          amount: session.amount_total,
+          url_count: parseInt(url_count),
+          session_id: session.id,
+          admin_email: 'admin@identra.io', // Replace with actual admin email
         });
-        console.log('[Webhook] Confirmation email sent to:', customer_email);
+        console.log('[Webhook] Invoice email sent to:', customer_email);
       } catch (emailError) {
         console.error('[Webhook] Email error:', emailError.message);
       }
