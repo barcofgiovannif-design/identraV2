@@ -6,23 +6,15 @@ const APP_ID = Deno.env.get('BASE44_APP_ID');
 
 Deno.serve(async (req) => {
   try {
-    // Add required header for Base44 SDK
-    const headers = new Headers(req.headers);
-    headers.set('Base44-App-Id', APP_ID);
-    
-    const newReq = new Request(req, { headers });
-    const base44 = createClientFromRequest(newReq);
-
-    const user = await base44.auth.me();
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
+    // Parse body first
     const body = await req.json();
     const { plan_id, customer_email, customer_name } = body;
 
-    // Fetch plan details
-    const plan = await base44.entities.PricingPlan.get(plan_id);
+    // Initialize Base44 SDK with the original request
+    const base44 = createClientFromRequest(req);
+
+    // Fetch plan details using service role (no auth required for public data)
+    const plan = await base44.asServiceRole.entities.PricingPlan.get(plan_id);
     if (!plan) {
       return Response.json({ error: 'Plan not found' }, { status: 404 });
     }
