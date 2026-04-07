@@ -8,7 +8,7 @@ Deno.serve(async (req) => {
   try {
     // Parse body first
     const body = await req.json();
-    const { plan_id, customer_email, customer_name } = body;
+    const { plan_id, customer_email, customer_name, appUrl } = body;
 
     // Initialize Base44 SDK with the original request
     const base44 = createClientFromRequest(req);
@@ -19,7 +19,8 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Plan not found' }, { status: 404 });
     }
 
-    const origin = new URL(req.url).origin;
+    // Use appUrl from frontend (where the user's app is hosted)
+    const redirectUrl = appUrl || new URL(req.url).origin;
 
     // Create Stripe checkout session (card only - no bank transfers)
     const session = await stripe.checkout.sessions.create({
@@ -46,8 +47,8 @@ Deno.serve(async (req) => {
         customer_email,
         customer_name,
       },
-      success_url: `${origin}/success`,
-      cancel_url: `${origin}/`,
+      success_url: `${redirectUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${redirectUrl}/`,
     });
 
     console.log('[Checkout] Session created:', { sessionId: session.id });

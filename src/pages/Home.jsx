@@ -31,7 +31,8 @@ export default function Home() {
       const response = await base44.functions.invoke('stripeCheckout', {
         plan_id: checkoutModal.id,
         customer_email: formData.email,
-        customer_name: formData.company_name
+        customer_name: formData.company_name,
+        appUrl: window.location.origin
       });
       console.log('[Home] Checkout response:', response.data);
       if (response.data.url) {
