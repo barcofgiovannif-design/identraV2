@@ -9,12 +9,18 @@ import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 
 export default function Home() {
-  const [checkoutModal, setCheckoutModal] = useState(null); // holds the selected plan
+  const [checkoutModal, setCheckoutModal] = useState(null);
   const [formData, setFormData] = useState({ company_name: "", email: "" });
   const [loading, setLoading] = useState(false);
+  const [planLoading, setPlanLoading] = useState(null);
 
-  const handleGetStarted = (plan) => {
-    setCheckoutModal(plan);
+  const handleGetStarted = async (plan) => {
+    setPlanLoading(plan.name);
+    const dbPlans = await base44.entities.PricingPlan.filter({ is_active: true });
+    const dbPlan = dbPlans.find(p => p.name.toLowerCase() === plan.name.toLowerCase());
+    setPlanLoading(null);
+    if (!dbPlan) { alert('Plan not found. Please contact support.'); return; }
+    setCheckoutModal({ ...plan, id: dbPlan.id });
     setFormData({ company_name: "", email: "" });
   };
 
@@ -310,13 +316,14 @@ export default function Home() {
               <div className="text-gray-600 mb-6">{plan.urls} permanent URLs</div>
               <Button
                   onClick={() => handleGetStarted(plan)}
+                  disabled={planLoading === plan.name}
                   className={`w-full mb-6 rounded-lg ${
                     plan.popular
                       ? "bg-gray-900 hover:bg-gray-800 text-white"
                       : "bg-gray-100 hover:bg-gray-200 text-gray-900"
                   }`}
                 >
-                  Get Started
+                  {planLoading === plan.name ? <Loader2 className="w-4 h-4 animate-spin" /> : "Get Started"}
                 </Button>
               <ul className="space-y-3">
                 {plan.features.map((feature, idx) => (
