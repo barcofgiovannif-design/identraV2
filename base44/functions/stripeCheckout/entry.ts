@@ -29,9 +29,9 @@ Deno.serve(async (req) => {
 
     const origin = new URL(req.url).origin;
 
-    // Create Stripe checkout session
+    // Create Stripe checkout session (first, then build URLs with the session ID)
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
+      payment_method_types: ['card'], // Card only - no bank transfers
       mode: 'payment',
       customer_email: customer_email,
       line_items: [
@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
         customer_name,
       },
       success_url: `${origin}/success`,
-      cancel_url: `${origin}/?checkout=cancelled`,
+      cancel_url: `${origin}/`,
     });
 
     console.log('[Checkout] Session created:', { sessionId: session.id, clientSecret: session.client_secret });
