@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
 
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'], // only card, no bank transfers
+      payment_method_types: ['card'],
       mode: 'payment',
       customer_email: customer_email,
       line_items: [
@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
               name: `${plan.name} Package - ${plan.url_count} Digital Cards`,
               description: `Permanent digital business cards for your team`,
             },
-            unit_amount: Math.round(plan.price * 100), // Convert to cents
+            unit_amount: Math.round(plan.price * 100),
           },
           quantity: 1,
         },
@@ -54,12 +54,15 @@ Deno.serve(async (req) => {
         customer_email,
         customer_name,
       },
-      success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${origin}/success`,
       cancel_url: `${origin}/?checkout=cancelled`,
     });
 
+    console.log('[Checkout] Session created:', { sessionId: session.id, clientSecret: session.client_secret });
+
     return Response.json({ 
       sessionId: session.id,
+      clientSecret: session.client_secret,
       url: session.url 
     });
 

@@ -27,12 +27,25 @@ export default function Home() {
   const handleCheckout = async (e) => {
     e.preventDefault();
     setLoading(true);
-    const response = await base44.functions.invoke('stripeCheckout', {
-      plan_id: checkoutModal.id,
-      customer_email: formData.email,
-      customer_name: formData.company_name
-    });
-    window.location.href = response.data.url;
+    try {
+      const response = await base44.functions.invoke('stripeCheckout', {
+        plan_id: checkoutModal.id,
+        customer_email: formData.email,
+        customer_name: formData.company_name
+      });
+      console.log('[Home] Checkout response:', response.data);
+      if (response.data.url) {
+        window.location.href = response.data.url;
+      } else {
+        console.error('[Home] No checkout URL received', response.data);
+        alert('Failed to create checkout. Please try again.');
+      }
+    } catch (error) {
+      console.error('[Home] Checkout error:', error?.message, error);
+      alert('Error creating checkout: ' + (error?.message || 'Unknown error'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const features = [
