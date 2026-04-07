@@ -1,9 +1,9 @@
-import { createClient } from 'npm:@base44/sdk@0.8.23';
-import Stripe from 'npm:stripe@17.5.0';
+import Stripe from 'npm:stripe@16.0.0';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'));
-const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET');
-const base44 = createClient({ appId: Deno.env.get('BASE44_APP_ID') });
+const WEBHOOK_SECRET = Deno.env.get('STRIPE_WEBHOOK_SECRET');
+const APP_ID = Deno.env.get('BASE44_APP_ID');
 
 Deno.serve(async (req) => {
   try {
@@ -11,91 +11,84 @@ Deno.serve(async (req) => {
     const signature = req.headers.get('stripe-signature');
 
     if (!signature) {
-      return Response.json({ error: 'No signature' }, { status: 400 });
+      return Response.json({ error: 'Missing signature' }, { status: 400 });
     }
 
-    // Verify webhook signature (MUST use async version for Deno)
+    // Validate Stripe webhook signature
     const event = await stripe.webhooks.constructEventAsync(
       body,
       signature,
-      webhookSecret
+      WEBHOOK_SECRET
     );
+
+    // Add required header for Base44 SDK
+    const headers = new Headers(req.headers);
+    headers.set('Base44-App-Id', APP_ID);
+    headers.set('Content-Type', 'application/json');
+    
+    const newReq = new Request(req, { headers, body });
+    const base44 = createClientFromRequest(newReq);
 
     // Handle checkout.session.completed event
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object;
-      const metadata = session.metadata;
+      const { customer_email, plan_name, url_count } = session.metadata;
 
-      // Create or update company
-      const existingCompanies = await base44.asServiceRole.entities.Company.filter({ 
-        email: metadata.customer_email 
-      });
+      console.log('[Webhook] Processing session:', { sessionId: session.id, email: customer_email });
 
-      let company;
-      
-      if (existingCompanies.length > 0) {
-        // Update existing company (upgrade)
-        company = existingCompanies[0];
-        await base44.asServiceRole.entities.Company.update(company.id, {
-          purchased_urls: company.purchased_urls + parseInt(metadata.url_count),
-          stripe_customer_id: session.customer || company.stripe_customer_id
-        });
-      } else {
-        // Create new company (first purchase)
+      // Check if company already exists
+      let company = await base44.asServiceRole.entities.Company.filter({ email: customer_email });
+      company = company[0];
+
+      if (!company) {
+        // Create new company
         company = await base44.asServiceRole.entities.Company.create({
-          company_name: metadata.customer_name,
-          email: metadata.customer_email,
-          purchased_urls: parseInt(metadata.url_count),
+          company_name: customer_email.split('@')[0],
+          email: customer_email,
+          purchased_urls: parseInt(url_count),
           used_urls: 0,
           status: 'active',
           stripe_customer_id: session.customer,
-          brand_color: '#000000'
         });
+        console.log('[Webhook] Company created:', company.id);
+      } else {
+        // Update existing company
+        await base44.asServiceRole.entities.Company.update(company.id, {
+          purchased_urls: company.purchased_urls + parseInt(url_count),
+          stripe_customer_id: session.customer,
+        });
+        console.log('[Webhook] Company updated:', company.id);
       }
 
       // Create purchase record
       await base44.asServiceRole.entities.Purchase.create({
         company_id: company.id,
-        plan_id: metadata.plan_id,
-        amount: session.amount_total / 100, // Convert from cents
-        url_count: parseInt(metadata.url_count),
+        amount: session.amount_total / 100,
+        url_count: parseInt(url_count),
         stripe_session_id: session.id,
         stripe_payment_intent: session.payment_intent,
         status: 'completed',
-        purchase_type: existingCompanies.length > 0 ? 'upgrade' : 'initial'
+        purchase_type: 'initial',
       });
 
-      // Send welcome email
-      await base44.asServiceRole.integrations.Core.SendEmail({
-        to: metadata.customer_email,
-        subject: 'Welcome to DigitalCard - Your Purchase is Complete',
-        body: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #111827;">Welcome to DigitalCard!</h2>
-            <p>Thank you for your purchase. Your account is now active with ${metadata.url_count} permanent digital business card URLs.</p>
-            <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <h3 style="margin-top: 0;">Your Package Details:</h3>
-              <p><strong>Plan:</strong> ${metadata.plan_name}</p>
-              <p><strong>URLs Included:</strong> ${metadata.url_count}</p>
-              <p><strong>Company:</strong> ${metadata.customer_name}</p>
-            </div>
-            <p>Sign in to your dashboard to start creating digital business cards for your team.</p>
-            <div style="margin: 30px 0;">
-              <a href="${new URL(req.url).origin}/login" 
-                 style="background-color: #111827; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block;">
-                Access Your Dashboard
-              </a>
-            </div>
-            <p style="color: #666; font-size: 14px;">Need help? Contact our support team anytime.</p>
-          </div>
-        `
-      });
+      console.log('[Webhook] Purchase recorded for:', customer_email);
+
+      // Send confirmation email
+      try {
+        await base44.integrations.Core.SendEmail({
+          to: customer_email,
+          subject: 'Payment Confirmed - Welcome to Identra',
+          body: `Thank you for your purchase! You now have ${url_count} digital card slots available.`,
+        });
+        console.log('[Webhook] Confirmation email sent to:', customer_email);
+      } catch (emailError) {
+        console.error('[Webhook] Email error:', emailError.message);
+      }
     }
 
-    return Response.json({ received: true });
-
+    return Response.json({ received: true }, { status: 200 });
   } catch (error) {
-    console.error('Webhook error:', error);
-    return Response.json({ error: error.message }, { status: 400 });
+    console.error('[Webhook] Error:', error.message);
+    return Response.json({ error: error.message }, { status: 500 });
   }
 });
