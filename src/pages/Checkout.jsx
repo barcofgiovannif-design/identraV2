@@ -62,8 +62,6 @@ export default function Checkout() {
     return [prev, current, next];
   };
 
-  const [submitted, setSubmitted] = useState(false);
-
   const handleCheckout = async (e) => {
     e.preventDefault();
     
@@ -71,73 +69,24 @@ export default function Checkout() {
       alert('Please select a plan');
       return;
     }
+    if (!formData.company_name || !formData.email) {
+      alert('Please fill in all required fields');
+      return;
+    }
 
     setLoading(true);
-    
-    // Simulate form submission
-    setTimeout(() => {
-      setLoading(false);
-      setSubmitted(true);
-    }, 1000);
+    const response = await base44.functions.invoke('stripeCheckout', {
+      plan_id: selectedPlan.id,
+      customer_email: formData.email,
+      customer_name: formData.company_name
+    });
+    window.location.href = response.data.url;
   };
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-gray-900" />
-      </div>
-    );
-  }
-
-  if (submitted) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-6">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-          className="max-w-2xl w-full"
-        >
-          <Card className="text-center">
-            <CardHeader>
-              <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                <Check className="w-10 h-10 text-green-600" />
-              </div>
-              <CardTitle className="text-3xl mb-2">Thank You!</CardTitle>
-              <p className="text-gray-600">Your request has been received successfully</p>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="bg-gray-50 p-6 rounded-lg">
-                <p className="text-lg font-semibold text-gray-900 mb-2">What happens next?</p>
-                <p className="text-gray-600">
-                  We'll send a payment invoice and detailed next steps to:
-                </p>
-                <p className="text-gray-900 font-medium mt-2">{formData.email}</p>
-              </div>
-              
-              <div className="text-left space-y-3 pt-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-gray-900 text-white flex items-center justify-center text-sm flex-shrink-0 mt-0.5">1</div>
-                  <p className="text-gray-600">Check your email for the payment invoice</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-gray-900 text-white flex items-center justify-center text-sm flex-shrink-0 mt-0.5">2</div>
-                  <p className="text-gray-600">Complete the payment using the provided link</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-gray-900 text-white flex items-center justify-center text-sm flex-shrink-0 mt-0.5">3</div>
-                  <p className="text-gray-600">We'll activate your account and send your login credentials</p>
-                </div>
-              </div>
-
-              <div className="pt-6">
-                <p className="text-sm text-gray-500">
-                  Questions? Contact us at support@identra.com
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
       </div>
     );
   }
@@ -306,15 +255,7 @@ export default function Checkout() {
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Phone (optional)</Label>
-                    <Input
-                      id="phone"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      className="rounded-lg"
-                    />
-                  </div>
+
                 </div>
 
                 <Button
@@ -325,15 +266,15 @@ export default function Checkout() {
                   {loading ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Submitting...
+                      Redirecting to payment...
                     </>
                   ) : (
-                    'Submit Form'
+                    `Proceed to Payment — $${selectedPlan?.price}`
                   )}
                 </Button>
 
                 <p className="text-xs text-gray-500 text-center">
-                  We'll send you a payment invoice and next steps via email
+                  You'll be redirected to Stripe's secure checkout
                 </p>
               </form>
             </CardContent>
