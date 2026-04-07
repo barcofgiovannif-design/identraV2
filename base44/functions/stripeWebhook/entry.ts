@@ -1,19 +1,14 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { createClient } from 'npm:@base44/sdk@0.8.23';
 import Stripe from 'npm:stripe@17.5.0';
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'));
 const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET');
+const base44 = createClient({ appId: Deno.env.get('BASE44_APP_ID') });
 
 Deno.serve(async (req) => {
   try {
     const body = await req.text();
     const signature = req.headers.get('stripe-signature');
-
-    // Inject app ID header so Base44 SDK works with Stripe webhook requests
-    const headers = new Headers(req.headers);
-    headers.set('Base44-App-Id', Deno.env.get('BASE44_APP_ID'));
-    const modifiedReq = new Request(req.url, { method: req.method, headers, body });
-    const base44 = createClientFromRequest(modifiedReq);
 
     if (!signature) {
       return Response.json({ error: 'No signature' }, { status: 400 });

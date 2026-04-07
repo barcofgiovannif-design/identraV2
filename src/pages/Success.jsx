@@ -1,11 +1,31 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "../utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle } from "lucide-react";
+import { base44 } from "@/api/base44Client";
 
 export default function Success() {
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get('session_id');
+    console.log('[Success] Page loaded. session_id:', sessionId);
+
+    if (sessionId) {
+      // Debug: verify the webhook was processed by checking if a purchase was created
+      base44.entities.Purchase.filter({ stripe_session_id: sessionId })
+        .then(purchases => {
+          console.log('[Success] Purchases found for session:', purchases);
+          if (!purchases || purchases.length === 0) {
+            console.warn('[Success] No purchase record found yet — webhook may not have fired or failed.');
+          }
+        })
+        .catch(err => {
+          console.error('[Success] Error checking purchase record:', err?.message, err);
+        });
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-gray-50 flex items-center justify-center px-6">
