@@ -1,12 +1,34 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "../utils";
 import { Button } from "@/components/ui/button";
-import { Check, QrCode, Users, Zap, Shield, Sparkles } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Check, QrCode, Users, Zap, Shield, Sparkles, Loader2, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 
 export default function Home() {
+  const [checkoutModal, setCheckoutModal] = useState(null); // holds the selected plan
+  const [formData, setFormData] = useState({ company_name: "", email: "" });
+  const [loading, setLoading] = useState(false);
+
+  const handleGetStarted = (plan) => {
+    setCheckoutModal(plan);
+    setFormData({ company_name: "", email: "" });
+  };
+
+  const handleCheckout = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    const response = await base44.functions.invoke('stripeCheckout', {
+      plan_id: checkoutModal.id,
+      customer_email: formData.email,
+      customer_name: formData.company_name
+    });
+    window.location.href = response.data.url;
+  };
+
   const features = [
     {
       icon: QrCode,
@@ -286,8 +308,8 @@ export default function Home() {
               </div>
               <div className="text-sm text-gray-500 mb-6">Billed annually (${plan.annual})</div>
               <div className="text-gray-600 mb-6">{plan.urls} permanent URLs</div>
-              <Link to={createPageUrl("Checkout") + `?plan=${plan.name.toLowerCase()}`}>
-                <Button
+              <Button
+                  onClick={() => handleGetStarted(plan)}
                   className={`w-full mb-6 rounded-lg ${
                     plan.popular
                       ? "bg-gray-900 hover:bg-gray-800 text-white"
@@ -296,7 +318,6 @@ export default function Home() {
                 >
                   Get Started
                 </Button>
-              </Link>
               <ul className="space-y-3">
                 {plan.features.map((feature, idx) => (
                   <motion.li 
@@ -368,6 +389,58 @@ export default function Home() {
           <p>© 2026 Identra. All rights reserved.</p>
         </div>
       </footer>
+
+      {/* Checkout Modal */}
+      {checkoutModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8">
+            <div className="flex justify-between items-start mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">{checkoutModal.name} Package</h2>
+                <p className="text-gray-500">${checkoutModal.monthly}/month · {checkoutModal.urls} permanent URLs</p>
+              </div>
+              <button onClick={() => setCheckoutModal(null)} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleCheckout} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="company_name">Company Name *</Label>
+                <Input
+                  id="company_name"
+                  value={formData.company_name}
+                  onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
+                  required
+                  placeholder="Your company name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Company Email *</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  required
+                  placeholder="Used for login and invoicing"
+                />
+              </div>
+              <Button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-gray-900 hover:bg-gray-800 h-12 text-base mt-2"
+              >
+                {loading ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Redirecting to Stripe...</>
+                ) : (
+                  `Pay $${checkoutModal.annual} — Secure Checkout`
+                )}
+              </Button>
+              <p className="text-xs text-gray-400 text-center">Powered by Stripe · Secure payment</p>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

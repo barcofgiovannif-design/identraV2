@@ -48,7 +48,6 @@
  * The mainPage value must match a key in the PAGES object exactly.
  */
 import CardView from './pages/CardView';
-import Checkout from './pages/Checkout';
 import CompanyDashboard from './pages/CompanyDashboard';
 import Demo from './pages/Demo';
 import Home from './pages/Home';
@@ -61,7 +60,6 @@ import __Layout from './Layout.jsx';
 
 export const PAGES = {
     "CardView": CardView,
-    "Checkout": Checkout,
     "CompanyDashboard": CompanyDashboard,
     "Demo": Demo,
     "Home": Home,
