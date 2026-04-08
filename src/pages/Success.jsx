@@ -1,12 +1,15 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "../utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, Download } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { generateReceiptPdf } from "../utils/generateReceiptPdf";
 
 export default function Success() {
+  const [purchase, setPurchase] = useState(null);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const sessionId = params.get('session_id');
@@ -16,15 +19,16 @@ export default function Success() {
       const checkPurchase = async () => {
         try {
           const purchases = await base44.entities.Purchase.filter({ stripe_session_id: sessionId });
-          console.log('[Success] Purchases found for session:', purchases);
-          if (!purchases || purchases.length === 0) {
-            console.warn('[Success] No purchase record found yet — webhook may not have fired or failed.');
+          if (purchases && purchases.length > 0) {
+            setPurchase(purchases[0]);
           }
         } catch (err) {
           console.error('[Success] Error checking purchase record:', err?.message, err);
         }
       };
-      checkPurchase();
+      // Retry a few times since webhook may take a moment
+      setTimeout(checkPurchase, 2000);
+      setTimeout(checkPurchase, 6000);
     }
   }, []);
 
@@ -44,6 +48,17 @@ export default function Success() {
             <p className="text-gray-500 mb-8">
               We'll activate your account and send your login credentials shortly.
             </p>
+
+            {purchase && (
+              <Button
+                variant="outline"
+                className="w-full rounded-lg h-12 text-base mb-3 gap-2"
+                onClick={() => generateReceiptPdf(purchase)}
+              >
+                <Download className="w-5 h-5" />
+                Download Receipt (PDF)
+              </Button>
+            )}
 
             <Link to={createPageUrl("Home")}>
               <Button className="w-full bg-gray-900 hover:bg-gray-800 rounded-lg h-12 text-base">

@@ -60,9 +60,14 @@ Deno.serve(async (req) => {
         console.log('[Webhook] Company updated:', company.id);
       }
 
-      // Create purchase record
+      // Create purchase record with invoice info for receipt generation
+      const invoiceNumber = `INV-${Date.now()}`;
       await base44.asServiceRole.entities.Purchase.create({
         company_id: company.id,
+        plan_name: plan_name,
+        customer_name: session.metadata.customer_name || customer_email.split('@')[0],
+        customer_email: customer_email,
+        invoice_number: invoiceNumber,
         amount: session.amount_total / 100,
         url_count: parseInt(url_count),
         stripe_session_id: session.id,
@@ -76,7 +81,6 @@ Deno.serve(async (req) => {
       // Send professional invoice email
       try {
         const invoiceDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-        const invoiceNumber = `INV-${Date.now()}`;
         const amountFormatted = (session.amount_total / 100).toFixed(2);
         const customerName = session.metadata.customer_name || customer_email.split('@')[0];
 
