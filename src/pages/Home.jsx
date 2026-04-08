@@ -113,6 +113,14 @@ export default function Home() {
 
   const plans = [
     {
+      name: "Test",
+      urls: 1,
+      monthly: 1,
+      annual: 1,
+      test: true,
+      features: ["1 permanent URL", "For testing purposes only", "All core features included"]
+    },
+    {
       name: "Starter",
       urls: 5,
       monthly: 29,
@@ -349,12 +357,12 @@ export default function Home() {
             Purchase permanent digital identity slots for your team
           </p>
         </motion.div>
-        <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
           {plans.map((plan, index) => (
             <motion.div
               key={index}
               className={`bg-white rounded-2xl border-2 p-8 relative ${
-                plan.popular ? "border-gray-900 shadow-xl" : "border-gray-100"
+                plan.popular ? "border-gray-900 shadow-xl" : plan.test ? "border-dashed border-yellow-400" : "border-gray-100"
               }`}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -362,6 +370,18 @@ export default function Home() {
               transition={{ duration: 0.5, delay: index * 0.1 }}
               whileHover={{ y: -10, scale: 1.02 }}
             >
+              {plan.test && (
+                <motion.div
+                  className="absolute -top-4 left-1/2 transform -translate-x-1/2"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                >
+                  <span className="bg-yellow-400 text-yellow-900 text-xs font-semibold px-4 py-1 rounded-full">
+                    🧪 Test
+                  </span>
+                </motion.div>
+              )}
               {plan.popular && (
                 <motion.div 
                   className="absolute -top-4 left-1/2 transform -translate-x-1/2"
