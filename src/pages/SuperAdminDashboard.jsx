@@ -9,10 +9,17 @@ import RevenueChart from "../components/admin/RevenueChart";
 import GenerateCardsModal from "../components/admin/GenerateCardsModal";
 import AllCardsTable from "../components/admin/AllCardsTable";
 import OrdersTable from "../components/admin/OrdersTable";
+import UsersTable from "../components/admin/UsersTable";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 export default function SuperAdminDashboard() {
   const [showGenerateModal, setShowGenerateModal] = useState(false);
+
+  const { data: users = [], refetch: refetchUsers } = useQuery({
+    queryKey: ['allUsers'],
+    queryFn: () => base44.entities.User.list()
+  });
+
   const { data: companies = [] } = useQuery({
     queryKey: ['companies'],
     queryFn: () => base44.entities.Company.list()
@@ -99,19 +106,24 @@ export default function SuperAdminDashboard() {
         {/* Content Tabs */}
         <Tabs defaultValue="companies" className="space-y-6">
           <TabsList className="bg-white border border-gray-200">
-            <TabsTrigger value="companies">Companies</TabsTrigger>
+            <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="orders">Orders</TabsTrigger>
+            <TabsTrigger value="companies">Companies</TabsTrigger>
             <TabsTrigger value="cards">Digital Cards</TabsTrigger>
             <TabsTrigger value="revenue">Revenue</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="companies">
-            <CompaniesTable companies={companies} />
+          <TabsContent value="users">
+            <UsersTable users={users} purchases={purchases} onRefresh={refetchUsers} />
           </TabsContent>
 
           <TabsContent value="orders">
             <OrdersTable purchases={purchases} companies={companies} />
+          </TabsContent>
+
+          <TabsContent value="companies">
+            <CompaniesTable companies={companies} />
           </TabsContent>
 
           <TabsContent value="cards">

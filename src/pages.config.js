@@ -55,6 +55,7 @@ import Success from './pages/Success';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import Verify from './pages/Verify';
 import Card from './pages/Card';
+import Account from './pages/Account';
 import __Layout from './Layout.jsx';
 
 
@@ -67,6 +68,7 @@ export const PAGES = {
     "SuperAdminDashboard": SuperAdminDashboard,
     "Verify": Verify,
     "Card": Card,
+    "Account": Account,
 }
 
 export const pagesConfig = {

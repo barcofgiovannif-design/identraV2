@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "../utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Check, QrCode, Users, Zap, Shield, Sparkles, Loader2, X } from "lucide-react";
+import { Check, QrCode, Users, Zap, Shield, Sparkles, Loader2, X, UserCircle, LogOut, LogIn } from "lucide-react";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 
@@ -13,15 +13,49 @@ export default function Home() {
   const [formData, setFormData] = useState({ company_name: "", email: "" });
   const [loading, setLoading] = useState(false);
   const [planLoading, setPlanLoading] = useState(null);
+  const [currentUser, setCurrentUser] = useState(undefined); // undefined = not yet checked
+
+  useEffect(() => {
+    base44.auth.me().then(u => setCurrentUser(u)).catch(() => setCurrentUser(null));
+
+    // If redirected back after login with a plan pending, auto-open checkout
+    const params = new URLSearchParams(window.location.search);
+    const pendingPlan = params.get('plan');
+    if (pendingPlan) {
+      base44.entities.PricingPlan.filter({ is_active: true }).then(dbPlans => {
+        const dbPlan = dbPlans.find(p => p.name.toLowerCase() === pendingPlan.toLowerCase());
+        if (dbPlan) {
+          const staticPlans = [
+            { name: "Starter", urls: 5, monthly: 29, annual: 349 },
+            { name: "Growth", urls: 10, monthly: 59, annual: 699 },
+            { name: "Pro", urls: 30, monthly: 175, annual: 2099 },
+            { name: "Team 40", urls: 40, monthly: 233, annual: 2799 },
+            { name: "Enterprise 50", urls: 50, monthly: 291, annual: 3499 },
+          ];
+          const staticPlan = staticPlans.find(p => p.name.toLowerCase() === pendingPlan.toLowerCase());
+          setCheckoutModal({ ...(staticPlan || {}), ...dbPlan, id: dbPlan.id });
+          // Remove query param cleanly
+          window.history.replaceState({}, '', window.location.pathname);
+        }
+      }).catch(() => {});
+    }
+  }, []);
 
   const handleGetStarted = async (plan) => {
+    // Must be logged in to purchase
+    if (!currentUser) {
+      // Redirect to login, come back with plan pre-selected
+      const returnUrl = `${window.location.origin}${window.location.pathname}?plan=${encodeURIComponent(plan.name)}`;
+      base44.auth.redirectToLogin(returnUrl);
+      return;
+    }
     setPlanLoading(plan.name);
     const dbPlans = await base44.entities.PricingPlan.filter({ is_active: true });
     const dbPlan = dbPlans.find(p => p.name.toLowerCase() === plan.name.toLowerCase());
     setPlanLoading(null);
     if (!dbPlan) { alert('Plan not found. Please contact support.'); return; }
     setCheckoutModal({ ...plan, id: dbPlan.id });
-    setFormData({ company_name: "", email: "" });
+    setFormData({ company_name: currentUser.full_name || "", email: currentUser.email || "" });
   };
 
   const handleCheckout = async (e) => {
@@ -30,7 +64,7 @@ export default function Home() {
     try {
       const response = await base44.functions.invoke('stripeCheckout', {
         plan_id: checkoutModal.id,
-        customer_email: formData.email,
+        customer_email: currentUser?.email || formData.email,
         customer_name: formData.company_name,
         appUrl: window.location.origin
       });
@@ -126,7 +160,26 @@ export default function Home() {
             alt="Identra" 
             className="h-8"
           />
-          <div className="flex gap-4 items-center">
+          <div className="flex gap-3 items-center">
+            {currentUser === undefined ? null : currentUser ? (
+              <>
+                <Link to="/Account">
+                  <Button variant="ghost" size="sm" className="gap-2 text-gray-700">
+                    <UserCircle className="w-5 h-5" />
+                    <span className="hidden sm:inline">{currentUser.full_name || currentUser.email}</span>
+                  </Button>
+                </Link>
+                <Button variant="ghost" size="sm" className="gap-2 text-gray-500" onClick={() => base44.auth.logout('/')}>
+                  <LogOut className="w-4 h-4" />
+                  <span className="hidden sm:inline">Logout</span>
+                </Button>
+              </>
+            ) : (
+              <Button variant="outline" size="sm" className="gap-2" onClick={() => base44.auth.redirectToLogin(window.location.href)}>
+                <LogIn className="w-4 h-4" />
+                Login / Register
+              </Button>
+            )}
           </div>
         </div>
       </nav>
@@ -426,25 +479,19 @@ export default function Home() {
             </div>
             <form onSubmit={handleCheckout} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="company_name">Company Name *</Label>
+                <Label htmlFor="company_name">Company / Contact Name *</Label>
                 <Input
                   id="company_name"
                   value={formData.company_name}
                   onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
                   required
-                  placeholder="Your company name"
+                  placeholder="Your company or contact name"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Company Email *</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  required
-                  placeholder="Used for login and invoicing"
-                />
+                <Label>Email</Label>
+                <Input value={currentUser?.email || ''} disabled className="bg-gray-50 text-gray-500" />
+                <p className="text-xs text-gray-400">Logged in as {currentUser?.email}</p>
               </div>
               <Button
                 type="submit"

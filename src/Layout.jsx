@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "./utils";
 import { Button } from "@/components/ui/button";
-import { LogOut, Building2, LayoutDashboard, Users } from "lucide-react";
+import { LogOut, Building2, LayoutDashboard, Users, UserCircle } from "lucide-react";
 
 export default function Layout({ children, currentPageName }) {
   const [user, setUser] = useState(null);
@@ -78,6 +78,12 @@ export default function Layout({ children, currentPageName }) {
                         <p className="text-xs text-gray-500">Super Admin</p>
                       )}
                     </div>
+                    <Link to={createPageUrl('Account')}>
+                      <Button variant="ghost" size="sm" className="gap-2">
+                        <UserCircle className="w-4 h-4" />
+                        Account
+                      </Button>
+                    </Link>
                     <Button
                       variant="ghost"
                       size="sm"
