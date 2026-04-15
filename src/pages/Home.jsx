@@ -471,8 +471,12 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="border-t border-gray-100 py-12">
-        <div className="max-w-7xl mx-auto px-6 text-center text-gray-600">
+        <div className="max-w-7xl mx-auto px-6 text-center text-gray-600 space-y-3">
           <p>© 2026 Identra. All rights reserved.</p>
+          <div className="flex justify-center gap-6 text-sm">
+            <Link to="/Privacy" className="text-gray-500 hover:text-gray-900 transition-colors">Privacy Policy</Link>
+            <Link to="/Terms" className="text-gray-500 hover:text-gray-900 transition-colors">Terms of Service</Link>
+          </div>
         </div>
       </footer>
 
