@@ -113,14 +113,6 @@ export default function Home() {
 
   const plans = [
     {
-      name: "Test",
-      urls: 1,
-      monthly: 1,
-      annual: 1,
-      test: true,
-      features: ["1 permanent URL", "For testing purposes only", "All core features included"]
-    },
-    {
       name: "Starter",
       urls: 5,
       monthly: 29,
