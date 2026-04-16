@@ -65,12 +65,30 @@ export const api = {
     Lead: entity('leads'),
     Interaction: entity('interactions'),
     HardwareCard: entity('hardware'),
+    Template: entity('templates'),
+    Team: entity('teams'),
+    Webhook: entity('webhooks'),
+    AuditLog: entity('audit'),
   },
 
   urls: {
     reassign: (id, profileData) => http('POST', `/urls/${id}/reassign`, { json: profileData }),
     unassign: (id) => http('POST', `/urls/${id}/unassign`),
     stats: (params) => http('GET', '/interactions/stats', { query: params }),
+    import: (payload) => http('POST', '/urls/import', { json: payload }),
+  },
+
+  templates: {
+    apply: (id, profile_ids) => http('POST', `/templates/${id}/apply`, { json: { profile_ids } }),
+  },
+
+  teams: {
+    assign: (id, profile_ids) => http('POST', `/teams/${id}/assign`, { json: { profile_ids } }),
+  },
+
+  webhooks: {
+    test: (id) => http('POST', `/webhooks/${id}/test`),
+    deliveries: (id) => http('GET', `/webhooks/${id}/deliveries`),
   },
 
   leads: {

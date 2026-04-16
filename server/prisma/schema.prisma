@@ -71,6 +71,10 @@ model Company {
   hardwareCards HardwareCard[]
   leads         Lead[]
   purchases     Purchase[]
+  templates     Template[]
+  teams         Team[]
+  webhooks      Webhook[]
+  audit_logs    AuditLog[]
 
   @@index([email])
 }
@@ -107,6 +111,8 @@ model Url {
 model Profile {
   id              String   @id @default(cuid())
   company_id      String
+  template_id     String?
+  team_id         String?
   full_name       String?
   title           String?
   company_name    String?
@@ -123,9 +129,112 @@ model Profile {
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
 
-  company     Company @relation(fields: [company_id], references: [id], onDelete: Cascade)
-  active_url  Url?    @relation("UrlActiveProfile")
+  company     Company   @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  template_ref Template? @relation(fields: [template_id], references: [id], onDelete: SetNull)
+  team        Team?     @relation(fields: [team_id], references: [id], onDelete: SetNull)
+  active_url  Url?      @relation("UrlActiveProfile")
   leads       Lead[]
+
+  @@index([company_id])
+  @@index([template_id])
+  @@index([team_id])
+}
+
+// ============================================================
+// TEAM — Organizational subdivision inside a Company (Ventas, Marketing, etc.)
+// ============================================================
+
+model Team {
+  id             String   @id @default(cuid())
+  company_id     String
+  name           String
+  parent_team_id String?
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  company  Company   @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  parent   Team?     @relation("TeamTree", fields: [parent_team_id], references: [id], onDelete: SetNull)
+  children Team[]    @relation("TeamTree")
+  profiles Profile[]
+
+  @@index([company_id])
+  @@index([parent_team_id])
+}
+
+// ============================================================
+// AUDIT LOG — Immutable record of critical actions.
+// ============================================================
+
+model AuditLog {
+  id            String   @id @default(cuid())
+  company_id    String
+  actor_user_id String?
+  actor_email   String?
+  action        String   // e.g. url.reassigned, template.applied, lead.captured, csv.imported
+  entity_type   String?  // url, profile, template, lead, webhook...
+  entity_id     String?
+  metadata      Json?
+  created_at    DateTime @default(now())
+
+  company Company @relation(fields: [company_id], references: [id], onDelete: Cascade)
+
+  @@index([company_id, created_at])
+  @@index([action])
+}
+
+// ============================================================
+// WEBHOOK — Outbound HTTP callback triggered on events.
+// ============================================================
+
+model Webhook {
+  id         String   @id @default(cuid())
+  company_id String
+  name       String
+  url        String   @db.Text
+  secret     String?
+  events     Json     // array of event strings, e.g. ["lead.captured"]
+  is_active  Boolean  @default(true)
+  last_fired_at DateTime?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  company    Company   @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  deliveries WebhookDelivery[]
+
+  @@index([company_id])
+}
+
+model WebhookDelivery {
+  id           String   @id @default(cuid())
+  webhook_id   String
+  event        String
+  payload      Json
+  status_code  Int?
+  response     String?  @db.Text
+  error        String?  @db.Text
+  delivered_at DateTime @default(now())
+
+  webhook Webhook @relation(fields: [webhook_id], references: [id], onDelete: Cascade)
+
+  @@index([webhook_id, delivered_at])
+}
+
+// Smart Template — enforces brand/edit rules across a group of profiles.
+model Template {
+  id              String   @id @default(cuid())
+  company_id      String
+  name            String
+  // Shared across every profile using this template (corporate website, linkedin, etc.)
+  common_links    Json?
+  // Array of profile field names that members cannot edit (admin-locked).
+  locked_fields   Json?
+  // Visual defaults: { template, font_style, custom_color }
+  design_settings Json?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  company  Company   @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  profiles Profile[]
 
   @@index([company_id])
 }

@@ -10,10 +10,17 @@ import StatsOverview from "../components/company/StatsOverview";
 import BrandingSettings from "../components/company/BrandingSettings";
 import AnalyticsPanel from "../components/company/AnalyticsPanel";
 import LeadsPanel from "../components/company/LeadsPanel";
+import TemplatesPanel from "../components/company/TemplatesPanel";
+import CsvImportModal from "../components/company/CsvImportModal";
+import TeamsPanel from "../components/company/TeamsPanel";
+import WebhooksPanel from "../components/company/WebhooksPanel";
+import AuditLogPanel from "../components/company/AuditLogPanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Upload } from "lucide-react";
 
 export default function CompanyDashboard() {
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [company, setCompany] = useState(null);
   const [loading, setLoading] = useState(true);
   const queryClient = useQueryClient();
@@ -84,14 +91,25 @@ export default function CompanyDashboard() {
             <h1 className="text-3xl font-bold text-gray-900 mb-2">{company.company_name}</h1>
             <p className="text-gray-600">Manage your team's digital business cards</p>
           </div>
-          <Button
-            onClick={() => setShowCreateModal(true)}
-            disabled={!canCreateCard}
-            className="bg-gray-900 hover:bg-gray-800 rounded-lg"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Create Card
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowImportModal(true)}
+              disabled={!canCreateCard}
+              className="rounded-lg"
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              Importar CSV
+            </Button>
+            <Button
+              onClick={() => setShowCreateModal(true)}
+              disabled={!canCreateCard}
+              className="bg-gray-900 hover:bg-gray-800 rounded-lg"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Create Card
+            </Button>
+          </div>
         </div>
 
         {/* Stats Overview */}
@@ -125,9 +143,13 @@ export default function CompanyDashboard() {
         )}
 
         <Tabs defaultValue="team" className="space-y-4">
-          <TabsList className="bg-white border border-gray-200">
+          <TabsList className="bg-white border border-gray-200 flex-wrap h-auto">
             <TabsTrigger value="team">Team Members</TabsTrigger>
+            <TabsTrigger value="teams">Equipos</TabsTrigger>
             <TabsTrigger value="leads">Leads</TabsTrigger>
+            <TabsTrigger value="templates">Plantillas</TabsTrigger>
+            <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
+            <TabsTrigger value="audit">Audit</TabsTrigger>
             <TabsTrigger value="branding">Marca</TabsTrigger>
           </TabsList>
 
@@ -135,8 +157,24 @@ export default function CompanyDashboard() {
             <CardsList cards={cards} company={company} isLoading={isLoading} />
           </TabsContent>
 
+          <TabsContent value="teams">
+            <TeamsPanel company={company} cards={cards} />
+          </TabsContent>
+
           <TabsContent value="leads">
             <LeadsPanel company={company} cards={cards} />
+          </TabsContent>
+
+          <TabsContent value="templates">
+            <TemplatesPanel company={company} />
+          </TabsContent>
+
+          <TabsContent value="webhooks">
+            <WebhooksPanel company={company} />
+          </TabsContent>
+
+          <TabsContent value="audit">
+            <AuditLogPanel company={company} />
           </TabsContent>
 
           <TabsContent value="branding">
@@ -145,7 +183,6 @@ export default function CompanyDashboard() {
         </Tabs>
       </div>
 
-      {/* Create Card Modal */}
       {showCreateModal && (
         <CreateCardModal
           company={company}
@@ -153,6 +190,16 @@ export default function CompanyDashboard() {
           onSuccess={() => {
             queryClient.invalidateQueries(['digitalCards']);
             setShowCreateModal(false);
+          }}
+        />
+      )}
+
+      {showImportModal && (
+        <CsvImportModal
+          company={company}
+          onClose={() => {
+            queryClient.invalidateQueries({ queryKey: ['digitalCards'] });
+            setShowImportModal(false);
           }}
         />
       )}

@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { prisma } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
+import { recordAudit } from '../lib/audit.js';
+import { dispatchEvent } from '../lib/webhooks.js';
 
 const router = Router();
 
@@ -18,6 +20,21 @@ router.post('/capture/:short_code', async (req, res) => {
       name, email, phone, company, notes,
     },
   });
+
+  // Fire webhooks + audit without blocking the response.
+  recordAudit(null, {
+    company_id: url.company_id,
+    action: 'lead.captured',
+    entity_type: 'lead',
+    entity_id: lead.id,
+    metadata: { short_code: url.short_code, email, name },
+  });
+  dispatchEvent({
+    company_id: url.company_id,
+    event: 'lead.captured',
+    payload: { lead, short_code: url.short_code },
+  });
+
   res.json({ success: true, lead });
 });
 

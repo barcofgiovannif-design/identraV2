@@ -16,6 +16,10 @@ import usersRouter from './routes/users.js';
 import leadsRouter from './routes/leads.js';
 import interactionsRouter from './routes/interactions.js';
 import hardwareRouter from './routes/hardware.js';
+import templatesRouter from './routes/templates.js';
+import teamsRouter from './routes/teams.js';
+import auditRouter from './routes/audit.js';
+import webhooksRouter from './routes/webhooks.js';
 import { redirectRouter } from './routes/redirect.js';
 
 const app = express();
@@ -51,6 +55,10 @@ app.use('/api/stripe', stripeRouter);
 app.use('/api/leads', leadsRouter);
 app.use('/api/interactions', interactionsRouter);
 app.use('/api/hardware', hardwareRouter);
+app.use('/api/templates', templatesRouter);
+app.use('/api/teams', teamsRouter);
+app.use('/api/audit', auditRouter);
+app.use('/api/webhooks', webhooksRouter);
 
 app.use((err, _req, res, _next) => {
   console.error(err);

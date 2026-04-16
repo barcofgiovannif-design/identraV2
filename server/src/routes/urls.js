@@ -3,6 +3,7 @@ import { nanoid } from 'nanoid';
 import { prisma } from '../db.js';
 import { requireAuth, requireAdmin } from '../middleware/auth.js';
 import { generateQrPng } from '../lib/qr.js';
+import { recordAudit } from '../lib/audit.js';
 
 const router = Router();
 const APP_URL = process.env.APP_URL || 'http://localhost:5173';
@@ -14,8 +15,19 @@ const tapUrlFor = (code) => `${PUBLIC_BASE}/r/${code}`;
 async function mergedUrlView(url) {
   const profile = url.active_profile
     ?? (url.active_profile_id
-      ? await prisma.profile.findUnique({ where: { id: url.active_profile_id } })
+      ? await prisma.profile.findUnique({
+          where: { id: url.active_profile_id },
+          include: { template_ref: true },
+        })
       : null);
+  const tpl = profile?.template_ref || null;
+  const tplDesign = tpl?.design_settings || {};
+  // common_links (from template) override profile's own social_links so master
+  // changes propagate instantly to every profile using the template.
+  const mergedSocial = {
+    ...(profile?.social_links || {}),
+    ...(tpl?.common_links || {}),
+  };
   return {
     id: url.id,
     company_id: url.company_id,
@@ -26,6 +38,9 @@ async function mergedUrlView(url) {
     is_active: url.is_active,
     status: url.is_active ? (profile ? 'active' : 'unassigned') : 'inactive',
     active_profile_id: url.active_profile_id,
+    template_id: profile?.template_id ?? null,
+    template_ref: tpl,
+    locked_fields: tpl?.locked_fields || [],
     created_at: url.created_at,
     updated_at: url.updated_at,
     // Flattened profile fields for existing UI code
@@ -37,11 +52,11 @@ async function mergedUrlView(url) {
     overview: profile?.bio ?? null,
     bio: profile?.bio ?? null,
     photo_url: profile?.photo_url ?? null,
-    social_links: profile?.social_links ?? null,
+    social_links: mergedSocial,
     messaging_links: profile?.messaging_links ?? null,
-    template: profile?.template ?? 'modern',
-    font_style: profile?.font_style ?? 'sans',
-    custom_color: profile?.custom_color ?? '#000000',
+    template: tplDesign.template ?? profile?.template ?? 'modern',
+    font_style: tplDesign.font_style ?? profile?.font_style ?? 'sans',
+    custom_color: tplDesign.custom_color ?? profile?.custom_color ?? '#000000',
     lead_capture_enabled: profile?.lead_capture_enabled ?? false,
   };
 }
@@ -121,6 +136,13 @@ router.post('/', requireAuth, async (req, res) => {
     return tx.url.findUnique({ where: { id: url.id }, include: { active_profile: true } });
   });
 
+  recordAudit(req, {
+    company_id,
+    action: 'url.created',
+    entity_type: 'url',
+    entity_id: created.id,
+    metadata: { short_code: created.short_code, has_profile: !!created.active_profile_id },
+  });
   res.json({ success: true, url: await mergedUrlView(created), tap_url: tapUrlFor(short_code) });
 });
 
@@ -232,7 +254,9 @@ router.patch('/:id', requireAuth, async (req, res) => {
   const urlPatch = {};
   if (typeof body.is_active === 'boolean') urlPatch.is_active = body.is_active;
 
-  const profilePatch = normalizeProfileData(body);
+  // If the active profile has a template with locked_fields, strip those keys.
+  let profilePatch = normalizeProfileData(body);
+  profilePatch = await applyLockedFields(profilePatch, url.active_profile);
   const norm = (s) => (s || '').trim().toLowerCase();
   const nameProvided = typeof body.full_name === 'string' && body.full_name.trim().length > 0;
   const nameChanged = nameProvided
@@ -293,7 +317,78 @@ router.patch('/:id', requireAuth, async (req, res) => {
   });
 
   const view = await mergedUrlView(result);
+  recordAudit(req, {
+    company_id: url.company_id,
+    action: nameChanged ? 'url.reassigned' : 'url.updated',
+    entity_type: 'url',
+    entity_id: url.id,
+    metadata: {
+      short_code: url.short_code,
+      from: url.active_profile?.full_name || null,
+      to: body.full_name || null,
+      fields_changed: Object.keys(profilePatch),
+    },
+  });
   res.json({ ...view, reassigned: Boolean(nameChanged) });
+});
+
+// Bulk CSV import: create N (URL + Profile) in one shot.
+// Body: { company_id, template_id?, rows: [{ full_name, title, email, phone, ... }] }
+router.post('/import', requireAuth, async (req, res) => {
+  const { company_id, template_id = null, rows = [] } = req.body || {};
+  if (!company_id || !Array.isArray(rows) || rows.length === 0) {
+    return res.status(400).json({ error: 'company_id and rows[] required' });
+  }
+
+  const company = await prisma.company.findUnique({ where: { id: company_id } });
+  if (!company) return res.status(404).json({ error: 'Company not found' });
+  const available = company.purchased_urls - company.used_urls;
+  if (rows.length > available) {
+    return res.status(400).json({ error: `Only ${available} URL slots available; ${rows.length} requested.` });
+  }
+
+  const created = [];
+  const errors = [];
+  for (const [i, row] of rows.entries()) {
+    try {
+      const profileData = normalizeProfileData(row);
+      if (!profileData.full_name) throw new Error('full_name missing');
+      const short_code = nanoid(10);
+      const { file_url: qr_code_url } = await generateQrPng(tapUrlFor(short_code), {
+        color: company.brand_color || '#000000',
+      });
+      const url = await prisma.$transaction(async (tx) => {
+        const u = await tx.url.create({
+          data: { company_id, short_code, qr_code_url, is_active: true },
+        });
+        const p = await tx.profile.create({
+          data: { ...profileData, company_id, template_id },
+        });
+        await tx.url.update({ where: { id: u.id }, data: { active_profile_id: p.id } });
+        await tx.urlAssignment.create({
+          data: { url_id: u.id, profile_snapshot: p, assigned_at: new Date() },
+        });
+        return u;
+      });
+      created.push({ row: i, short_code: url.short_code, id: url.id });
+    } catch (err) {
+      errors.push({ row: i, error: err.message });
+    }
+  }
+
+  if (created.length > 0) {
+    await prisma.company.update({
+      where: { id: company_id },
+      data: { used_urls: { increment: created.length } },
+    });
+  }
+
+  recordAudit(req, {
+    company_id,
+    action: 'csv.imported',
+    metadata: { created: created.length, errors: errors.length, template_id },
+  });
+  res.json({ success: errors.length === 0, created: created.length, errors });
 });
 
 router.delete('/:id', requireAdmin, async (req, res) => {
@@ -313,7 +408,7 @@ function normalizeProfileData(data) {
   const allowed = [
     'full_name', 'title', 'company_name', 'phone', 'email', 'bio', 'overview',
     'photo_url', 'social_links', 'messaging_links', 'template', 'font_style',
-    'custom_color', 'lead_capture_enabled',
+    'custom_color', 'lead_capture_enabled', 'template_id',
   ];
   const out = {};
   for (const k of allowed) {
@@ -322,6 +417,17 @@ function normalizeProfileData(data) {
     else out[k] = data[k];
   }
   return out;
+}
+
+// Strip keys the template has marked as locked, so UI-forced edits are rejected.
+async function applyLockedFields(patch, profile) {
+  if (!profile?.template_id) return patch;
+  const tpl = await prisma.template.findUnique({ where: { id: profile.template_id } });
+  const locked = Array.isArray(tpl?.locked_fields) ? tpl.locked_fields : [];
+  if (locked.length === 0) return patch;
+  const filtered = { ...patch };
+  for (const field of locked) delete filtered[field];
+  return filtered;
 }
 
 export default router;
