@@ -20,6 +20,7 @@ import templatesRouter from './routes/templates.js';
 import teamsRouter from './routes/teams.js';
 import auditRouter from './routes/audit.js';
 import webhooksRouter from './routes/webhooks.js';
+import adminRouter from './routes/admin.js';
 import { redirectRouter } from './routes/redirect.js';
 
 const app = express();
@@ -59,6 +60,7 @@ app.use('/api/templates', templatesRouter);
 app.use('/api/teams', teamsRouter);
 app.use('/api/audit', auditRouter);
 app.use('/api/webhooks', webhooksRouter);
+app.use('/api/admin', adminRouter);
 
 app.use((err, _req, res, _next) => {
   console.error(err);

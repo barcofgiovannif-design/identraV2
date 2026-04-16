@@ -78,6 +78,23 @@ export const api = {
     import: (payload) => http('POST', '/urls/import', { json: payload }),
   },
 
+  activity: {
+    byMember: (params) => http('GET', '/interactions/by-member', { query: params }),
+    breakdown: (params) => http('GET', '/interactions/breakdown', { query: params }),
+    funnel: (params) => http('GET', '/interactions/funnel', { query: params }),
+    timeline: (params) => http('GET', '/interactions/timeline', { query: params }),
+  },
+
+  events: {
+    // Public endpoint — no credentials needed — fires from /Card/:slug page.
+    log: (short_code, event, meta) => fetch(`/api/public/events/${encodeURIComponent(short_code)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event, meta }),
+      keepalive: true,
+    }).catch(() => {}),
+  },
+
   templates: {
     apply: (id, profile_ids) => http('POST', `/templates/${id}/apply`, { json: { profile_ids } }),
   },
@@ -89,6 +106,10 @@ export const api = {
   webhooks: {
     test: (id) => http('POST', `/webhooks/${id}/test`),
     deliveries: (id) => http('GET', `/webhooks/${id}/deliveries`),
+  },
+
+  admin: {
+    stats: (params) => http('GET', '/admin/stats', { query: params }),
   },
 
   leads: {

@@ -44,27 +44,27 @@ export default function AuditLogPanel({ company }) {
             <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
               <History className="w-5 h-5" /> Audit log ({logs.length})
             </h2>
-            <p className="text-sm text-gray-500">Registro inmutable de acciones críticas (creación, reasignación, leads, webhooks…).</p>
+            <p className="text-sm text-gray-500">Immutable record of critical actions (creation, reassignment, leads, webhooks…).</p>
           </div>
           <div className="relative w-64">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar…" className="pl-9" />
+            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search…" className="pl-9" />
           </div>
         </div>
 
         {isLoading ? (
-          <p className="py-10 text-center text-gray-500">Cargando…</p>
+          <p className="py-10 text-center text-gray-500">Loading…</p>
         ) : filtered.length === 0 ? (
           <div className="text-center py-12 text-gray-500">
             <History className="w-10 h-10 mx-auto mb-3 text-gray-300" />
-            <p>Sin registros todavía.</p>
+            <p>No entries yet.</p>
           </div>
         ) : (
           <div className="space-y-1 max-h-[600px] overflow-y-auto">
             {filtered.map((l) => (
               <div key={l.id} className="flex items-start gap-3 py-2 px-3 rounded hover:bg-gray-50 border-b last:border-0 text-sm">
                 <div className="whitespace-nowrap text-xs text-gray-500 pt-1 w-36">
-                  {new Date(l.created_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}
+                  {new Date(l.created_at).toLocaleString('en-US', { dateStyle: 'short', timeStyle: 'short' })}
                 </div>
                 <Badge className={`${ACTION_COLORS[l.action] || 'bg-gray-100 text-gray-700'} border-0`}>
                   {l.action}

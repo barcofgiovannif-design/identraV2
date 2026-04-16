@@ -9,11 +9,11 @@ import { Upload, FileText, Check } from "lucide-react";
 import toast from "react-hot-toast";
 
 const TARGET_FIELDS = [
-  { key: 'full_name', label: 'Nombre completo *', required: true },
-  { key: 'title', label: 'Cargo' },
+  { key: 'full_name', label: 'Full name *', required: true },
+  { key: 'title', label: 'Title' },
   { key: 'email', label: 'Email' },
-  { key: 'phone', label: 'Teléfono' },
-  { key: 'bio', label: 'Bio / Descripción' },
+  { key: 'phone', label: 'Phone' },
+  { key: 'bio', label: 'Bio / Description' },
   { key: 'linkedin', label: 'LinkedIn URL (→ social_links.linkedin)' },
 ];
 
@@ -93,7 +93,7 @@ export default function CsvImportModal({ company, onClose }) {
         })
         .filter((r) => r.full_name);
 
-      if (payload.length === 0) throw new Error('No hay filas válidas con full_name.');
+      if (payload.length === 0) throw new Error('No valid rows with full_name.');
 
       return api.urls.import({
         company_id: company.id,
@@ -104,9 +104,9 @@ export default function CsvImportModal({ company, onClose }) {
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['digitalCards'] });
       if (res.errors?.length) {
-        toast(`${res.created} creadas, ${res.errors.length} con error.`, { icon: '⚠️' });
+        toast(`${res.created} created, ${res.errors.length} failed.`, { icon: '⚠️' });
       } else {
-        toast.success(`${res.created} tarjetas creadas.`);
+        toast.success(`${res.created} cards created.`);
       }
       onClose();
     },
@@ -118,34 +118,34 @@ export default function CsvImportModal({ company, onClose }) {
   return (
     <Dialog open onOpenChange={onClose}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>Importar miembros desde CSV</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>Import members from CSV</DialogTitle></DialogHeader>
 
         {rows.length === 0 ? (
           <div className="border-2 border-dashed rounded-xl p-8 text-center">
             <Upload className="w-10 h-10 mx-auto text-gray-400 mb-3" />
-            <p className="font-semibold mb-1">Sube un archivo CSV</p>
-            <p className="text-sm text-gray-500 mb-4">Primera fila = encabezados (nombre, cargo, email, teléfono…)</p>
+            <p className="font-semibold mb-1">Upload a CSV file</p>
+            <p className="text-sm text-gray-500 mb-4">First row = headers (name, title, email, phone…)</p>
             <label className="inline-block">
               <input type="file" accept=".csv,text/csv" onChange={handleFile} className="hidden" />
-              <span className="inline-block px-4 py-2 bg-gray-900 text-white rounded-lg cursor-pointer text-sm">Seleccionar archivo</span>
+              <span className="inline-block px-4 py-2 bg-gray-900 text-white rounded-lg cursor-pointer text-sm">Choose file</span>
             </label>
           </div>
         ) : (
           <div className="space-y-5">
             <div className="flex items-center gap-2 text-sm text-green-700">
-              <Check className="w-4 h-4" /> {rows.length} filas detectadas · {headers.length} columnas
+              <Check className="w-4 h-4" /> {rows.length} rows detected · {headers.length} columns
             </div>
 
             <div className="space-y-2">
-              <Label className="font-semibold">Mapear columnas</Label>
+              <Label className="font-semibold">Map columns</Label>
               <div className="grid grid-cols-2 gap-3">
                 {TARGET_FIELDS.map((t) => (
                   <div key={t.key} className="space-y-1">
                     <Label className="text-sm text-gray-600">{t.label}</Label>
                     <Select value={mapping[t.key] || 'none'} onValueChange={(v) => setMapping({ ...mapping, [t.key]: v === 'none' ? '' : v })}>
-                      <SelectTrigger><SelectValue placeholder="— ignorar —" /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder="— ignore —" /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="none">— ignorar —</SelectItem>
+                        <SelectItem value="none">— ignore —</SelectItem>
                         {headers.map((h) => <SelectItem key={h} value={h}>{h}</SelectItem>)}
                       </SelectContent>
                     </Select>
@@ -156,11 +156,11 @@ export default function CsvImportModal({ company, onClose }) {
 
             {templates.length > 0 && (
               <div className="space-y-2">
-                <Label className="font-semibold">Asignar plantilla (opcional)</Label>
+                <Label className="font-semibold">Assign template (optional)</Label>
                 <Select value={templateId || 'none'} onValueChange={(v) => setTemplateId(v === 'none' ? '' : v)}>
-                  <SelectTrigger><SelectValue placeholder="— sin plantilla —" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="— no template —" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">— sin plantilla —</SelectItem>
+                    <SelectItem value="none">— no template —</SelectItem>
                     {templates.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
@@ -168,7 +168,7 @@ export default function CsvImportModal({ company, onClose }) {
             )}
 
             <div>
-              <Label className="font-semibold mb-2 block">Preview (primeras 5 filas)</Label>
+              <Label className="font-semibold mb-2 block">Preview (first 5 rows)</Label>
               <div className="overflow-x-auto border rounded-lg text-xs">
                 <table className="min-w-full">
                   <thead className="bg-gray-50">
@@ -184,13 +184,13 @@ export default function CsvImportModal({ company, onClose }) {
             </div>
 
             <div className="flex justify-end gap-2 pt-2 border-t">
-              <Button variant="outline" onClick={onClose}>Cancelar</Button>
+              <Button variant="outline" onClick={onClose}>Cancel</Button>
               <Button
                 className="bg-gray-900 hover:bg-gray-800"
                 disabled={!canSubmit || importMutation.isPending}
                 onClick={() => importMutation.mutate()}
               >
-                {importMutation.isPending ? 'Importando…' : <><FileText className="w-4 h-4 mr-2" />Importar {rows.length} miembros</>}
+                {importMutation.isPending ? 'Importing…' : <><FileText className="w-4 h-4 mr-2" />Import {rows.length} members</>}
               </Button>
             </div>
           </div>

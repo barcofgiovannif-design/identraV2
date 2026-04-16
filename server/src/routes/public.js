@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { prisma } from '../db.js';
+import { enrichFromRequest } from '../lib/enrich.js';
 
 const router = Router();
 
@@ -12,15 +13,8 @@ router.get('/cards/:slug', async (req, res) => {
   if (!url || !url.is_active) return res.status(404).json({ error: 'Card not found' });
 
   // Also log a "view" interaction so direct visits count too (not only /r/).
-  const ua = req.headers['user-agent'] || '';
   prisma.interaction.create({
-    data: {
-      url_id: url.id,
-      ip_address: (req.headers['x-forwarded-for']?.split(',')[0] || req.socket?.remoteAddress || '').trim() || null,
-      user_agent: ua || null,
-      device_type: deviceType(ua),
-      referrer: req.headers.referer || null,
-    },
+    data: { url_id: url.id, event: 'view', ...enrichFromRequest(req) },
   }).catch(() => {});
 
   const profile = url.active_profile;
@@ -89,12 +83,23 @@ router.get('/cards/:id/vcard', async (req, res) => {
   res.send(v);
 });
 
-function deviceType(ua = '') {
-  const s = ua.toLowerCase();
-  if (/iphone|ipad|ipod/.test(s)) return 'ios';
-  if (/android/.test(s)) return 'android';
-  if (/windows|macintosh|linux/.test(s)) return 'desktop';
-  return 'other';
-}
+// Public event logger used by the card page for vcard_download and link_click.
+router.post('/events/:short_code', async (req, res) => {
+  const url = await prisma.url.findUnique({ where: { short_code: req.params.short_code } });
+  if (!url) return res.status(404).json({ error: 'URL not found' });
+  const { event, meta } = req.body || {};
+  if (!['vcard_download', 'link_click'].includes(event)) {
+    return res.status(400).json({ error: 'Invalid event' });
+  }
+  await prisma.interaction.create({
+    data: {
+      url_id: url.id,
+      event,
+      ...enrichFromRequest(req),
+      meta: meta ? meta : undefined,
+    },
+  });
+  res.json({ success: true });
+});
 
 export default router;

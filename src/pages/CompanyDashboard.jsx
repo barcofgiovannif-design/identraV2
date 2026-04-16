@@ -1,22 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { api } from "@/api/client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Users, Link as LinkIcon, TrendingUp } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Plus, Upload } from "lucide-react";
 import CreateCardModal from "../components/company/CreateCardModal";
 import CardsList from "../components/company/CardsList";
 import StatsOverview from "../components/company/StatsOverview";
-import BrandingSettings from "../components/company/BrandingSettings";
-import AnalyticsPanel from "../components/company/AnalyticsPanel";
+import ActivityPanel from "../components/company/ActivityPanel";
 import LeadsPanel from "../components/company/LeadsPanel";
-import TemplatesPanel from "../components/company/TemplatesPanel";
 import CsvImportModal from "../components/company/CsvImportModal";
-import TeamsPanel from "../components/company/TeamsPanel";
-import WebhooksPanel from "../components/company/WebhooksPanel";
-import AuditLogPanel from "../components/company/AuditLogPanel";
+import SettingsPanel from "../components/company/SettingsPanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Upload } from "lucide-react";
 
 export default function CompanyDashboard() {
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -29,9 +24,12 @@ export default function CompanyDashboard() {
     const loadCompany = async () => {
       try {
         const user = await api.auth.me();
-        const companies = await api.entities.Company.filter({ email: user.email });
-        if (companies.length > 0) {
-          setCompany(companies[0]);
+        if (user.company_id) {
+          const c = await api.entities.Company.get(user.company_id);
+          setCompany(c);
+        } else {
+          const companies = await api.entities.Company.filter({ email: user.email });
+          if (companies.length > 0) setCompany(companies[0]);
         }
       } catch (error) {
         console.error('Error loading company:', error);
@@ -45,14 +43,14 @@ export default function CompanyDashboard() {
   const { data: cards = [], isLoading } = useQuery({
     queryKey: ['digitalCards', company?.id],
     queryFn: () => company ? api.entities.DigitalCard.filter({ company_id: company.id }) : [],
-    enabled: !!company
+    enabled: !!company,
   });
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading...</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading…</h2>
         </div>
       </div>
     );
@@ -67,7 +65,7 @@ export default function CompanyDashboard() {
             <p className="text-gray-600 mb-6">
               Your account is not associated with a company yet. Please complete a purchase to create your company account.
             </p>
-            <Button 
+            <Button
               onClick={() => window.location.href = '/'}
               className="bg-gray-900 hover:bg-gray-800"
             >
@@ -85,10 +83,9 @@ export default function CompanyDashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Header */}
-        <div className="flex justify-between items-start mb-8">
+        <div className="flex justify-between items-start mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">{company.company_name}</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-1">{company.company_name}</h1>
             <p className="text-gray-600">Manage your team's digital business cards</p>
           </div>
           <div className="flex gap-2">
@@ -99,7 +96,7 @@ export default function CompanyDashboard() {
               className="rounded-lg"
             >
               <Upload className="w-4 h-4 mr-2" />
-              Importar CSV
+              Import CSV
             </Button>
             <Button
               onClick={() => setShowCreateModal(true)}
@@ -112,13 +109,8 @@ export default function CompanyDashboard() {
           </div>
         </div>
 
-        {/* Stats Overview */}
         <StatsOverview company={company} totalCards={cards.length} />
 
-        {/* Interaction Analytics */}
-        <AnalyticsPanel company={company} />
-
-        {/* Available Slots Warning */}
         {availableSlots <= 2 && availableSlots > 0 && (
           <Card className="mb-6 border-amber-200 bg-amber-50">
             <CardContent className="py-4">
@@ -142,43 +134,28 @@ export default function CompanyDashboard() {
           </Card>
         )}
 
-        <Tabs defaultValue="team" className="space-y-4">
+        <Tabs defaultValue="cards" className="space-y-4">
           <TabsList className="bg-white border border-gray-200 flex-wrap h-auto">
-            <TabsTrigger value="team">Team Members</TabsTrigger>
-            <TabsTrigger value="teams">Equipos</TabsTrigger>
+            <TabsTrigger value="cards">Cards</TabsTrigger>
+            <TabsTrigger value="activity">Activity</TabsTrigger>
             <TabsTrigger value="leads">Leads</TabsTrigger>
-            <TabsTrigger value="templates">Plantillas</TabsTrigger>
-            <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
-            <TabsTrigger value="audit">Audit</TabsTrigger>
-            <TabsTrigger value="branding">Marca</TabsTrigger>
+            <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="team">
+          <TabsContent value="cards">
             <CardsList cards={cards} company={company} isLoading={isLoading} />
           </TabsContent>
 
-          <TabsContent value="teams">
-            <TeamsPanel company={company} cards={cards} />
+          <TabsContent value="activity">
+            <ActivityPanel company={company} />
           </TabsContent>
 
           <TabsContent value="leads">
             <LeadsPanel company={company} cards={cards} />
           </TabsContent>
 
-          <TabsContent value="templates">
-            <TemplatesPanel company={company} />
-          </TabsContent>
-
-          <TabsContent value="webhooks">
-            <WebhooksPanel company={company} />
-          </TabsContent>
-
-          <TabsContent value="audit">
-            <AuditLogPanel company={company} />
-          </TabsContent>
-
-          <TabsContent value="branding">
-            <BrandingSettings company={company} />
+          <TabsContent value="settings">
+            <SettingsPanel company={company} cards={cards} />
           </TabsContent>
         </Tabs>
       </div>
@@ -188,7 +165,7 @@ export default function CompanyDashboard() {
           company={company}
           onClose={() => setShowCreateModal(false)}
           onSuccess={() => {
-            queryClient.invalidateQueries(['digitalCards']);
+            queryClient.invalidateQueries({ queryKey: ['digitalCards'] });
             setShowCreateModal(false);
           }}
         />

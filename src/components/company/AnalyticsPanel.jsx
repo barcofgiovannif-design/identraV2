@@ -25,9 +25,9 @@ export default function AnalyticsPanel({ company }) {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-              <Activity className="w-5 h-5" /> Actividad (últimos 30 días)
+              <Activity className="w-5 h-5" /> Activity (last 30 days)
             </h2>
-            <p className="text-sm text-gray-500">Cada escaneo del QR o vista del perfil cuenta como 1 tap.</p>
+            <p className="text-sm text-gray-500">Every QR scan or profile view counts as 1 tap.</p>
           </div>
           <div className="text-right">
             <div className="text-3xl font-bold text-gray-900">{isLoading ? '—' : total}</div>
@@ -39,13 +39,13 @@ export default function AnalyticsPanel({ company }) {
           <DeviceChip icon={<Apple className="w-4 h-4" />} label="iOS" value={byDevice.ios || 0} />
           <DeviceChip icon={<Smartphone className="w-4 h-4" />} label="Android" value={byDevice.android || 0} />
           <DeviceChip icon={<Monitor className="w-4 h-4" />} label="Desktop" value={byDevice.desktop || 0} />
-          <DeviceChip icon={<Smartphone className="w-4 h-4" />} label="Otros" value={byDevice.other || 0} />
+          <DeviceChip icon={<Smartphone className="w-4 h-4" />} label="Other" value={byDevice.other || 0} />
         </div>
 
         <div className="bg-gray-50 rounded-lg p-3">
           <div className="flex items-end gap-1 h-20">
             {byDay.length === 0 ? (
-              <div className="flex-1 text-center text-sm text-gray-400 self-center">Sin actividad registrada aún.</div>
+              <div className="flex-1 text-center text-sm text-gray-400 self-center">No activity recorded yet.</div>
             ) : (
               byDay.map((d) => (
                 <div key={d.date} className="flex-1 min-w-[3px] flex flex-col justify-end" title={`${d.date}: ${d.taps} taps`}>

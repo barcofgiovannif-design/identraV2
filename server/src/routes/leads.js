@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { prisma } from '../db.js';
-import { requireAuth } from '../middleware/auth.js';
+import { requireAuth, resolveCompanyScope } from '../middleware/auth.js';
 import { recordAudit } from '../lib/audit.js';
 import { dispatchEvent } from '../lib/webhooks.js';
 
@@ -38,14 +38,43 @@ router.post('/capture/:short_code', async (req, res) => {
   res.json({ success: true, lead });
 });
 
-// Authenticated: list leads for a company.
-router.get('/', requireAuth, async (req, res) => {
-  const where = {};
-  if (req.query.company_id) where.company_id = req.query.company_id;
-  if (req.query.url_id) where.url_id = req.query.url_id;
-  if (req.query.profile_id) where.profile_id = req.query.profile_id;
-  const list = await prisma.lead.findMany({ where, orderBy: { captured_at: 'desc' } });
-  res.json(list);
+// Authenticated: list leads scoped to caller's company (or any, for platform staff).
+router.get('/', requireAuth, async (req, res, next) => {
+  try {
+    const scoped = resolveCompanyScope(req);
+    const where = {};
+    if (scoped) where.company_id = scoped;
+    if (req.query.url_id) where.url_id = req.query.url_id;
+    if (req.query.profile_id) where.profile_id = req.query.profile_id;
+    if (req.query.since) where.captured_at = { gte: new Date(req.query.since) };
+    const list = await prisma.lead.findMany({
+      where,
+      orderBy: { captured_at: 'desc' },
+      include: {
+        url: { select: { id: true, short_code: true, company_id: true, active_profile: { select: { full_name: true } } } },
+      },
+    });
+    res.json(list);
+  } catch (err) { next(err); }
+});
+
+// Update status / notes of a lead.
+router.patch('/:id', requireAuth, async (req, res, next) => {
+  try {
+    const lead = await prisma.lead.findUnique({ where: { id: req.params.id } });
+    if (!lead) return res.status(404).json({ error: 'Not found' });
+    const scoped = resolveCompanyScope({ ...req, query: {}, body: { company_id: lead.company_id } });
+    if (scoped && scoped !== lead.company_id) return res.status(403).json({ error: 'Forbidden' });
+    const { status, notes } = req.body || {};
+    const updated = await prisma.lead.update({
+      where: { id: req.params.id },
+      data: {
+        ...(status !== undefined ? { status } : {}),
+        ...(notes !== undefined ? { notes } : {}),
+      },
+    });
+    res.json(updated);
+  } catch (err) { next(err); }
 });
 
 router.delete('/:id', requireAuth, async (req, res) => {

@@ -44,11 +44,40 @@ export async function requireAuth(req, res, next) {
   next();
 }
 
+// Platform staff (support or superadmin) — can access super-admin dashboard.
 export async function requireAdmin(req, res, next) {
   req.user = await loadUserFromReq(req);
   if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
-  if (req.user.role !== 'admin' && req.user.role !== 'superadmin') {
+  if (req.user.role !== 'support' && req.user.role !== 'superadmin') {
     return res.status(403).json({ error: 'Forbidden' });
   }
   next();
+}
+
+// Full platform owner (for destructive / billing actions).
+export async function requireSuperAdmin(req, res, next) {
+  req.user = await loadUserFromReq(req);
+  if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+  if (req.user.role !== 'superadmin') return res.status(403).json({ error: 'Forbidden' });
+  next();
+}
+
+// Returns the company_id the caller is allowed to act on. Platform staff can
+// pass any `company_id` in the query/body; corporate admins are pinned to
+// their own. Throws 403 if they try to cross-tenant.
+export function resolveCompanyScope(req) {
+  const requested = req.query.company_id || req.body?.company_id || null;
+  const isPlatform = req.user && (req.user.role === 'support' || req.user.role === 'superadmin');
+  if (isPlatform) return requested; // may be null → cross-company list
+  if (!req.user?.company_id) {
+    const err = new Error('No company assigned to this user');
+    err.status = 403;
+    throw err;
+  }
+  if (requested && requested !== req.user.company_id) {
+    const err = new Error('Forbidden: cross-tenant access');
+    err.status = 403;
+    throw err;
+  }
+  return req.user.company_id;
 }

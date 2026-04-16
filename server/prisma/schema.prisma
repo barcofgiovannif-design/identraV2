@@ -15,15 +15,22 @@ model User {
   id         String   @id @default(cuid())
   email      String   @unique
   full_name  String?
+  // Platform-level privileges. `user` has none; `support` and `superadmin`
+  // access the super-admin dashboard.
   role       Role     @default(user)
+  // If set, the user IS the admin of that company (one admin per company).
+  company_id String?
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
   sessions   Session[]
+  admin_of   Company? @relation("CompanyAdmin", fields: [company_id], references: [id], onDelete: SetNull)
+
+  @@index([company_id])
 }
 
 enum Role {
   user
-  admin
+  support
   superadmin
 }
 
@@ -75,6 +82,7 @@ model Company {
   teams         Team[]
   webhooks      Webhook[]
   audit_logs    AuditLog[]
+  admins        User[]        @relation("CompanyAdmin")
 
   @@index([email])
 }
@@ -294,17 +302,25 @@ model Interaction {
   id           String   @id @default(cuid())
   url_id       String
   timestamp    DateTime @default(now())
+  // view | vcard_download | link_click | lead_captured
+  event        String   @default("view")
   ip_address   String?
   user_agent   String?  @db.Text
   device_type  String?
+  browser      String?
+  os           String?
   referrer     String?  @db.Text
   geo_country  String?
   geo_city     String?
+  geo_region   String?
+  // Free-form payload: for link_click carries { target, url }; for vcard_download carries nothing.
+  meta         Json?
 
   url Url @relation(fields: [url_id], references: [id], onDelete: Cascade)
 
   @@index([url_id])
   @@index([timestamp])
+  @@index([event])
 }
 
 // ============================================================
@@ -321,7 +337,10 @@ model Lead {
   phone       String?
   company     String?
   notes       String?  @db.Text
+  // Sales pipeline: new → contacted → qualified → closed_won | closed_lost
+  status      String   @default("new")
   captured_at DateTime @default(now())
+  updated_at  DateTime @default(now()) @updatedAt
 
   url            Url      @relation(fields: [url_id], references: [id], onDelete: Cascade)
   profile        Profile? @relation(fields: [profile_id], references: [id], onDelete: SetNull)

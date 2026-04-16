@@ -12,7 +12,7 @@ import { Plus, Trash2, Edit2, Webhook, Zap, Eye, EyeOff } from "lucide-react";
 import toast from "react-hot-toast";
 
 const AVAILABLE_EVENTS = [
-  { key: 'lead.captured', label: 'Lead capturado' },
+  { key: 'lead.captured', label: 'Lead captured' },
 ];
 
 export default function WebhooksPanel({ company }) {
@@ -31,7 +31,7 @@ export default function WebhooksPanel({ company }) {
     mutationFn: (id) => api.entities.Webhook.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['webhooks'] });
-      toast.success('Webhook eliminado.');
+      toast.success('Webhook deleted.');
     },
     onError: (err) => toast.error(err.message),
   });
@@ -40,7 +40,7 @@ export default function WebhooksPanel({ company }) {
     mutationFn: (id) => api.webhooks.test(id),
     onSuccess: (res) => {
       if (res.status && res.status < 400) toast.success(`Ping OK (${res.status})`);
-      else toast.error(`Ping falló: ${res.error || res.status}`);
+      else toast.error(`Ping failed: ${res.error || res.status}`);
     },
     onError: (err) => toast.error(err.message),
   });
@@ -58,17 +58,17 @@ export default function WebhooksPanel({ company }) {
             <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
               <Webhook className="w-5 h-5" /> Webhooks ({hooks.length})
             </h2>
-            <p className="text-sm text-gray-500">Envía cada lead capturado a tu CRM, Zapier, Make o endpoint propio.</p>
+            <p className="text-sm text-gray-500">Send every captured lead to your CRM, Zapier, Make or custom endpoint.</p>
           </div>
           <Button onClick={() => setCreating(true)} className="bg-gray-900 hover:bg-gray-800">
-            <Plus className="w-4 h-4 mr-2" /> Nuevo webhook
+            <Plus className="w-4 h-4 mr-2" /> New webhook
           </Button>
         </div>
 
         {hooks.length === 0 ? (
           <div className="text-center py-12 text-gray-500">
             <Webhook className="w-10 h-10 mx-auto mb-3 text-gray-300" />
-            <p>No hay webhooks configurados.</p>
+            <p>No webhooks configured.</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -78,15 +78,15 @@ export default function WebhooksPanel({ company }) {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <h3 className="font-semibold text-gray-900">{h.name}</h3>
-                      <Badge variant={h.is_active ? 'default' : 'secondary'}>{h.is_active ? 'activo' : 'pausado'}</Badge>
+                      <Badge variant={h.is_active ? 'default' : 'secondary'}>{h.is_active ? 'active' : 'paused'}</Badge>
                       {(h.events || []).map((e) => <Badge key={e} variant="outline" className="text-xs">{e}</Badge>)}
                     </div>
                     <p className="text-xs font-mono text-gray-500 truncate mt-1">{h.url}</p>
-                    {h.last_fired_at && <p className="text-xs text-gray-400 mt-1">Último disparo: {new Date(h.last_fired_at).toLocaleString('es-MX')}</p>}
+                    {h.last_fired_at && <p className="text-xs text-gray-400 mt-1">Last fired: {new Date(h.last_fired_at).toLocaleString('en-US')}</p>}
                   </div>
                   <div className="flex items-center gap-2">
                     <Switch checked={h.is_active} onCheckedChange={(v) => toggle.mutate({ id: h.id, is_active: v })} />
-                    <Button variant="outline" size="sm" onClick={() => test.mutate(h.id)} disabled={test.isPending} title="Enviar ping"><Zap className="w-4 h-4" /></Button>
+                    <Button variant="outline" size="sm" onClick={() => test.mutate(h.id)} disabled={test.isPending} title="Send ping"><Zap className="w-4 h-4" /></Button>
                     <Button variant="outline" size="sm" onClick={() => setShowDeliveries(h)}>Deliveries</Button>
                     <Button variant="outline" size="sm" onClick={() => setEditing(h)}><Edit2 className="w-4 h-4" /></Button>
                     <Button variant="ghost" size="sm" className="text-red-500 hover:bg-red-50" onClick={() => remove.mutate(h.id)}>
@@ -133,7 +133,7 @@ function WebhookFormModal({ company, webhook, onClose }) {
       : api.entities.Webhook.create({ company_id: company.id, ...form }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['webhooks'] });
-      toast.success(isEdit ? 'Webhook actualizado.' : 'Webhook creado.');
+      toast.success(isEdit ? 'Webhook updated.' : 'Webhook created.');
       onClose();
     },
     onError: (err) => toast.error(err.message),
@@ -149,18 +149,18 @@ function WebhookFormModal({ company, webhook, onClose }) {
   return (
     <Dialog open onOpenChange={onClose}>
       <DialogContent className="max-w-lg">
-        <DialogHeader><DialogTitle>{isEdit ? 'Editar webhook' : 'Nuevo webhook'}</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{isEdit ? 'Edit webhook' : 'New webhook'}</DialogTitle></DialogHeader>
         <form onSubmit={(e) => { e.preventDefault(); mutation.mutate(); }} className="space-y-4">
           <div className="space-y-2">
-            <Label>Nombre *</Label>
-            <Input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Ej: Zapier HubSpot" />
+            <Label>Name *</Label>
+            <Input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Zapier HubSpot" />
           </div>
           <div className="space-y-2">
-            <Label>URL destino *</Label>
+            <Label>Target URL *</Label>
             <Input required value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} placeholder="https://hooks.zapier.com/…" />
           </div>
           <div className="space-y-2">
-            <Label>Eventos</Label>
+            <Label>Events</Label>
             <div className="space-y-1">
               {AVAILABLE_EVENTS.map((e) => (
                 <label key={e.key} className="flex items-center gap-2 text-sm cursor-pointer">
@@ -171,26 +171,26 @@ function WebhookFormModal({ company, webhook, onClose }) {
             </div>
           </div>
           <div className="space-y-2">
-            <Label>Secret (opcional)</Label>
+            <Label>Secret (optional)</Label>
             <div className="flex gap-2">
-              <Input type={showSecret ? 'text' : 'password'} value={form.secret} onChange={(e) => setForm({ ...form, secret: e.target.value })} placeholder="Dejar vacío para autogenerar" />
+              <Input type={showSecret ? 'text' : 'password'} value={form.secret} onChange={(e) => setForm({ ...form, secret: e.target.value })} placeholder="Leave blank to auto-generate" />
               <Button type="button" variant="outline" size="icon" onClick={() => setShowSecret((s) => !s)}>
                 {showSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </Button>
             </div>
-            <p className="text-xs text-gray-500">Se usa para firmar cada request con HMAC SHA-256 en el header <code>X-Identra-Signature</code>.</p>
+            <p className="text-xs text-gray-500">Used to sign each request with HMAC SHA-256 in the header <code>X-Identra-Signature</code>.</p>
           </div>
           <div className="flex items-center justify-between border rounded-lg p-3">
             <div>
-              <div className="font-medium text-sm">Webhook activo</div>
-              <div className="text-xs text-gray-500">Desactiva para pausar el envío.</div>
+              <div className="font-medium text-sm">Webhook active</div>
+              <div className="text-xs text-gray-500">Disable to pause delivery.</div>
             </div>
             <Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} />
           </div>
           <div className="flex justify-end gap-2 pt-2 border-t">
-            <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
+            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
             <Button type="submit" disabled={mutation.isPending} className="bg-gray-900 hover:bg-gray-800">
-              {mutation.isPending ? 'Guardando…' : (isEdit ? 'Guardar' : 'Crear')}
+              {mutation.isPending ? 'Saving…' : (isEdit ? 'Save' : 'Create')}
             </Button>
           </div>
         </form>
@@ -209,9 +209,9 @@ function DeliveriesModal({ webhook, onClose }) {
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Deliveries · {webhook.name}</DialogTitle></DialogHeader>
         {isLoading ? (
-          <p className="py-8 text-center text-gray-500">Cargando…</p>
+          <p className="py-8 text-center text-gray-500">Loading…</p>
         ) : data.length === 0 ? (
-          <p className="py-8 text-center text-gray-500">Aún no hay envíos registrados.</p>
+          <p className="py-8 text-center text-gray-500">No deliveries recorded yet.</p>
         ) : (
           <div className="space-y-2 text-sm">
             {data.map((d) => (
@@ -223,7 +223,7 @@ function DeliveriesModal({ webhook, onClose }) {
                       {d.status_code || 'ERR'}
                     </span>
                   </div>
-                  <span className="text-xs text-gray-500">{new Date(d.delivered_at).toLocaleString('es-MX')}</span>
+                  <span className="text-xs text-gray-500">{new Date(d.delivered_at).toLocaleString('en-US')}</span>
                 </div>
                 {d.error && <p className="text-xs text-red-600 mt-1">{d.error}</p>}
                 {d.response && <pre className="text-xs bg-gray-50 p-2 rounded mt-1 overflow-x-auto max-h-20">{d.response}</pre>}

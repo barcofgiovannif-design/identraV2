@@ -17,7 +17,7 @@ export default function Layout({ children, currentPageName }) {
     try {
       const userData = await api.auth.me();
       setUser(userData);
-      setIsAdmin(userData?.role === 'admin' || userData?.role === 'superadmin');
+      setIsAdmin(userData?.role === 'support' || userData?.role === 'superadmin');
     } catch (error) {
       setUser(null);
     }

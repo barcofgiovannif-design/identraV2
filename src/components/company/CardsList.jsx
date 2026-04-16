@@ -1,12 +1,59 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { QrCode, ExternalLink, Edit2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { QrCode, ExternalLink, Edit2, Search, Copy, Check } from "lucide-react";
 import EditCardModal from "./EditCardModal";
+import toast from "react-hot-toast";
+
+const SORTS = [
+  { value: 'name_asc', label: 'Name (A–Z)' },
+  { value: 'name_desc', label: 'Name (Z–A)' },
+  { value: 'taps_desc', label: 'Taps (highest)' },
+  { value: 'taps_asc', label: 'Taps (lowest)' },
+  { value: 'created_desc', label: 'Newest first' },
+  { value: 'created_asc', label: 'Oldest first' },
+];
 
 export default function CardsList({ cards, company, isLoading }) {
   const [editing, setEditing] = useState(null);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sort, setSort] = useState('taps_desc');
+  const [copied, setCopied] = useState(null);
+
+  const publicBase = typeof window !== 'undefined' ? window.location.origin : '';
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    let out = cards.filter((c) => {
+      if (statusFilter === 'active' && !c.active_profile_id) return false;
+      if (statusFilter === 'unassigned' && c.active_profile_id) return false;
+      if (statusFilter === 'inactive' && c.is_active !== false) return false;
+      if (!q) return true;
+      return [c.full_name, c.title, c.permanent_slug, c.email]
+        .some((v) => (v || '').toLowerCase().includes(q));
+    });
+    const sorters = {
+      name_asc: (a, b) => (a.full_name || '').localeCompare(b.full_name || ''),
+      name_desc: (a, b) => (b.full_name || '').localeCompare(a.full_name || ''),
+      taps_desc: (a, b) => (b.tap_count || 0) - (a.tap_count || 0),
+      taps_asc: (a, b) => (a.tap_count || 0) - (b.tap_count || 0),
+      created_desc: (a, b) => new Date(b.created_at) - new Date(a.created_at),
+      created_asc: (a, b) => new Date(a.created_at) - new Date(b.created_at),
+    };
+    out = [...out].sort(sorters[sort]);
+    return out;
+  }, [cards, search, statusFilter, sort]);
+
+  const counts = useMemo(() => {
+    const a = cards.filter((c) => c.active_profile_id).length;
+    const u = cards.filter((c) => !c.active_profile_id).length;
+    const i = cards.filter((c) => c.is_active === false).length;
+    return { all: cards.length, active: a, unassigned: u, inactive: i };
+  }, [cards]);
 
   const handleDownloadQR = async (card) => {
     if (!card.qr_code_url) return;
@@ -26,11 +73,23 @@ export default function CardsList({ cards, company, isLoading }) {
     }
   };
 
+  const copyLink = async (card) => {
+    const link = `${publicBase}/Card/${card.permanent_slug}`;
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopied(card.id);
+      toast.success('Public link copied.');
+      setTimeout(() => setCopied((x) => (x === card.id ? null : x)), 1500);
+    } catch {
+      window.prompt('Copy this link:', link);
+    }
+  };
+
   if (isLoading) {
     return (
       <Card>
         <CardContent className="py-12 text-center">
-          <p className="text-gray-600">Cargando tarjetas...</p>
+          <p className="text-gray-600">Loading cards…</p>
         </CardContent>
       </Card>
     );
@@ -40,8 +99,8 @@ export default function CardsList({ cards, company, isLoading }) {
     return (
       <Card>
         <CardContent className="py-12 text-center">
-          <p className="text-gray-600 mb-2">Aún no hay tarjetas creadas</p>
-          <p className="text-sm text-gray-500">Crea tu primera tarjeta digital para empezar</p>
+          <p className="text-gray-600 mb-2">No cards created yet</p>
+          <p className="text-sm text-gray-500">Create your first digital card to get started</p>
         </CardContent>
       </Card>
     );
@@ -50,68 +109,92 @@ export default function CardsList({ cards, company, isLoading }) {
   return (
     <Card className="mb-8">
       <CardContent className="p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">Team Members</h2>
-        <div className="space-y-4">
-          {cards.map((card) => {
-            const displayName = card.full_name || 'Sin asignar';
-            const initial = (displayName[0] || '?').toUpperCase();
-            return (
-              <div
-                key={card.id}
-                className="flex items-center justify-between p-4 border border-gray-200 rounded-xl hover:border-gray-300 transition-colors"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-gray-900 text-white rounded-full flex items-center justify-center font-semibold">
-                    {initial}
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">{displayName}</h3>
-                    <p className="text-sm text-gray-600">{card.title || '—'}</p>
-                    <div className="flex gap-2 mt-1 items-center">
-                      <Badge variant={card.status === 'active' ? 'default' : 'secondary'} className="text-xs">
-                        {card.status}
-                      </Badge>
-                      <span className="text-xs font-mono text-gray-400">/{card.permanent_slug}</span>
-                      {typeof card.tap_count === 'number' && (
-                        <span className="text-xs text-gray-500">· {card.tap_count} taps</span>
-                      )}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">Cards</h2>
+            <p className="text-sm text-gray-500">
+              {counts.active} active · {counts.unassigned} unassigned{counts.inactive ? ` · ${counts.inactive} disabled` : ''}
+            </p>
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            <div className="relative w-56">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search name, title, slug…" className="pl-9" />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All ({counts.all})</SelectItem>
+                <SelectItem value="active">Active ({counts.active})</SelectItem>
+                <SelectItem value="unassigned">Unassigned ({counts.unassigned})</SelectItem>
+                <SelectItem value="inactive">Disabled ({counts.inactive})</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={sort} onValueChange={setSort}>
+              <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {SORTS.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {filtered.length === 0 ? (
+          <p className="py-10 text-center text-gray-500">No cards match the current filters.</p>
+        ) : (
+          <div className="space-y-3">
+            {filtered.map((card) => {
+              const assigned = !!card.active_profile_id;
+              const displayName = assigned ? (card.full_name || '—') : 'Unassigned';
+              const initial = (displayName[0] || '?').toUpperCase();
+              const disabled = card.is_active === false;
+              return (
+                <div
+                  key={card.id}
+                  className={`flex items-center justify-between p-4 border rounded-xl hover:border-gray-300 transition-colors ${disabled ? 'bg-gray-50 opacity-70' : 'border-gray-200'}`}
+                >
+                  <div className="flex items-center gap-4 min-w-0">
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center font-semibold shrink-0 ${assigned ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-500'}`}>
+                      {initial}
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="font-semibold text-gray-900 truncate">{displayName}</h3>
+                      <p className="text-sm text-gray-600 truncate">{card.title || '—'}</p>
+                      <div className="flex gap-2 mt-1 items-center flex-wrap">
+                        {disabled ? (
+                          <Badge variant="outline" className="text-xs text-red-700 border-red-200">disabled</Badge>
+                        ) : assigned ? (
+                          <Badge className="text-xs bg-green-100 text-green-800 border-0">active</Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-xs text-amber-700 border-amber-200">unassigned</Badge>
+                        )}
+                        <span className="text-xs font-mono text-gray-400">/{card.permanent_slug}</span>
+                        {typeof card.tap_count === 'number' && (
+                          <span className="text-xs text-gray-500">· {card.tap_count} taps</span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setEditing(card)}
-                    className="rounded-lg"
-                    title="Editar"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => window.open(`/Card/${card.permanent_slug}`, '_blank')}
-                    className="rounded-lg"
-                    title="Ver tarjeta pública"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDownloadQR(card)}
-                    className="rounded-lg"
-                    title="Descargar QR"
-                  >
-                    <QrCode className="w-4 h-4" />
-                  </Button>
+                  <div className="flex gap-1 shrink-0">
+                    <Button variant="outline" size="sm" onClick={() => copyLink(card)} className="rounded-lg" title="Copy public link">
+                      {copied === card.id ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => window.open(`/Card/${card.permanent_slug}`, '_blank')} className="rounded-lg" title="View public card">
+                      <ExternalLink className="w-4 h-4" />
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => handleDownloadQR(card)} className="rounded-lg" title="Download QR">
+                      <QrCode className="w-4 h-4" />
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => setEditing(card)} className="rounded-lg" title="Edit">
+                      <Edit2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </CardContent>
 
       {editing && <EditCardModal card={editing} onClose={() => setEditing(null)} />}

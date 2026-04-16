@@ -30,24 +30,30 @@ export default function EditCardModal({ card, onClose }) {
   }), [card.id]);
 
   const [formData, setFormData] = useState(initial);
+  const [confirmReassign, setConfirmReassign] = useState(false);
   const nameChanged = (initial.full_name || '').trim().toLowerCase()
     !== (formData.full_name || '').trim().toLowerCase();
+  const hadPreviousName = !!(initial.full_name || '').trim();
 
   const queryClient = useQueryClient();
 
+  const submit = (extra = {}) => updateMutation.mutate({ ...formData, ...extra });
+
   const updateMutation = useMutation({
-    mutationFn: async () => api.entities.DigitalCard.update(card.id, formData),
+    mutationFn: async (payload) => api.entities.DigitalCard.update(card.id, payload),
     onSuccess: (resp) => {
       queryClient.invalidateQueries({ queryKey: ['digitalCards'] });
       queryClient.invalidateQueries({ queryKey: ['urlStats'] });
+      queryClient.invalidateQueries({ queryKey: ['activity.byMember'] });
       if (resp?.reassigned) {
-        toast.success('Nuevo miembro asignado a esta tarjeta (historial guardado).');
+        toast.success('New member assigned to this card — previous profile archived.');
       } else {
-        toast.success('Perfil actualizado.');
+        toast.success('Profile updated.');
       }
+      setConfirmReassign(false);
       onClose();
     },
-    onError: (err) => toast.error(err.message || 'Error al guardar.'),
+    onError: (err) => toast.error(err.message || 'Error saving.'),
   });
 
   const setSocial = (k, v) => setFormData((d) => ({ ...d, social_links: { ...d.social_links, [k]: v } }));
@@ -55,24 +61,29 @@ export default function EditCardModal({ card, onClose }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    updateMutation.mutate();
+    // If the name changed AND there was a previous name, always confirm intent.
+    if (nameChanged && hadPreviousName) {
+      setConfirmReassign(true);
+      return;
+    }
+    submit();
   };
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Editar tarjeta</DialogTitle>
+          <DialogTitle>Edit card</DialogTitle>
         </DialogHeader>
 
         <div className="bg-gray-50 p-3 rounded text-sm flex items-center justify-between">
           <div>
             <div><strong>Slug:</strong> <span className="font-mono">{card.permanent_slug}</span></div>
-            <div className="text-gray-500 text-xs mt-1">El link y el QR no cambian aunque edites estos datos.</div>
+            <div className="text-gray-500 text-xs mt-1">The link and QR stay the same even when you edit these fields.</div>
           </div>
-          {nameChanged && (
+          {nameChanged && hadPreviousName && (
             <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-amber-100 text-amber-800">
-              <UserCheck className="w-3 h-3" /> Se registrará como nuevo miembro
+              <UserCheck className="w-3 h-3" /> Name changed — you'll confirm on save
             </span>
           )}
         </div>
@@ -80,7 +91,7 @@ export default function EditCardModal({ card, onClose }) {
         <form onSubmit={handleSubmit} className="space-y-6 mt-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Nombre completo *</Label>
+              <Label>Full name *</Label>
               <Input
                 value={formData.full_name}
                 onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
@@ -88,7 +99,7 @@ export default function EditCardModal({ card, onClose }) {
               />
             </div>
             <div className="space-y-2">
-              <Label>Cargo</Label>
+              <Label>Title</Label>
               <Input
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
@@ -102,7 +113,7 @@ export default function EditCardModal({ card, onClose }) {
               <Input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
             </div>
             <div className="space-y-2">
-              <Label>Teléfono</Label>
+              <Label>Phone</Label>
               <Input value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
             </div>
           </div>
@@ -119,7 +130,7 @@ export default function EditCardModal({ card, onClose }) {
           <div className="flex items-center justify-between border rounded-lg p-3">
             <div>
               <div className="font-medium text-sm">Lead Capture Mode</div>
-              <div className="text-xs text-gray-500">Pide datos al visitante antes de entregar el vCard.</div>
+              <div className="text-xs text-gray-500">Ask the visitor for their info before handing out the vCard.</div>
             </div>
             <Switch
               checked={formData.lead_capture_enabled}
@@ -128,7 +139,7 @@ export default function EditCardModal({ card, onClose }) {
           </div>
 
           <div className="space-y-3">
-            <Label className="text-base font-semibold">Redes</Label>
+            <Label className="text-base font-semibold">Socials</Label>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label className="text-sm text-gray-600">LinkedIn</Label>
@@ -150,7 +161,7 @@ export default function EditCardModal({ card, onClose }) {
           </div>
 
           <div className="space-y-3">
-            <Label className="text-base font-semibold">Mensajería</Label>
+            <Label className="text-base font-semibold">Messaging</Label>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label className="text-sm text-gray-600">WhatsApp</Label>
@@ -164,25 +175,62 @@ export default function EditCardModal({ card, onClose }) {
           </div>
 
           <div className="space-y-2">
-            <Label>Estado del link</Label>
+            <Label>Link status</Label>
             <Select value={formData.is_active ? 'active' : 'inactive'} onValueChange={(v) => setFormData({ ...formData, is_active: v === 'active' })}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="active">Activo</SelectItem>
-                <SelectItem value="inactive">Inactivo</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
               </SelectContent>
             </Select>
-            <p className="text-xs text-gray-500">Si desactivas el link, el QR seguirá funcionando pero mostrará "Card Not Found".</p>
+            <p className="text-xs text-gray-500">If you disable the link, the QR keeps scanning but will show "Card Not Found".</p>
           </div>
 
           <div className="flex gap-3 justify-end pt-4 border-t">
-            <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
+            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
             <Button type="submit" disabled={updateMutation.isPending} className="bg-gray-900 hover:bg-gray-800">
-              {updateMutation.isPending ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Guardando...</>) : 'Guardar'}
+              {updateMutation.isPending ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</>) : 'Save'}
             </Button>
           </div>
         </form>
       </DialogContent>
+
+      {confirmReassign && (
+        <Dialog open onOpenChange={() => setConfirmReassign(false)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader><DialogTitle>Name changed — confirm action</DialogTitle></DialogHeader>
+            <div className="space-y-3 text-sm">
+              <p>You changed the name from:</p>
+              <div className="bg-gray-50 rounded p-3 font-mono text-xs">
+                <div>Before: <span className="font-bold">{initial.full_name || '(empty)'}</span></div>
+                <div>After:  <span className="font-bold">{formData.full_name || '(empty)'}</span></div>
+              </div>
+              <p className="text-gray-600">Is this a new team member replacing the previous one, or just a typo fix?</p>
+              <ul className="text-xs text-gray-500 list-disc pl-5 space-y-1">
+                <li><b>New person</b> archives the old profile (leads stay linked to the old name) and starts a fresh profile under the same card/URL.</li>
+                <li><b>Typo fix</b> renames in place — historical leads/activity stay attributed to this (renamed) profile.</li>
+              </ul>
+            </div>
+            <div className="flex flex-col gap-2 mt-5">
+              <Button
+                className="bg-gray-900 hover:bg-gray-800"
+                disabled={updateMutation.isPending}
+                onClick={() => submit()}
+              >
+                New person — archive the old profile
+              </Button>
+              <Button
+                variant="outline"
+                disabled={updateMutation.isPending}
+                onClick={() => submit({ force_update: true })}
+              >
+                Typo fix — rename in place
+              </Button>
+              <Button variant="ghost" onClick={() => setConfirmReassign(false)}>Cancel</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </Dialog>
   );
 }

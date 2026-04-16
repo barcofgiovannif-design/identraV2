@@ -42,6 +42,11 @@ export default function CardPage() {
     }
   };
 
+  const trackClick = (target, url) => {
+    if (!card?.permanent_slug) return;
+    api.events.log(card.permanent_slug, 'link_click', { target, url });
+  };
+
   const doDownloadVCard = async () => {
     setDownloading(true);
     try {
@@ -55,6 +60,7 @@ export default function CardPage() {
       a.click();
       window.URL.revokeObjectURL(url);
       a.remove();
+      api.events.log(card.permanent_slug, 'vcard_download');
     } catch (error) {
       alert('Error downloading contact');
     } finally {
@@ -212,8 +218,9 @@ export default function CardPage() {
               transition={{ duration: 0.5, delay: 0.5 }}
             >
               {card.email && (
-                <motion.a 
-                  href={`mailto:${card.email}`} 
+                <motion.a
+                  href={`mailto:${card.email}`}
+                  onClick={() => trackClick('email', card.email)}
                   className="block"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
@@ -226,8 +233,9 @@ export default function CardPage() {
               )}
 
               {card.phone && (
-                <motion.a 
-                  href={`tel:${card.phone}`} 
+                <motion.a
+                  href={`tel:${card.phone}`}
+                  onClick={() => trackClick('phone', card.phone)}
                   className="block"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
@@ -240,10 +248,11 @@ export default function CardPage() {
               )}
 
               {card.messaging_links?.whatsapp && (
-                <motion.a 
-                  href={`https://wa.me/${card.messaging_links.whatsapp}`} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
+                <motion.a
+                  href={`https://wa.me/${card.messaging_links.whatsapp}`}
+                  onClick={() => trackClick('whatsapp', card.messaging_links.whatsapp)}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="block"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
@@ -260,35 +269,35 @@ export default function CardPage() {
             {(card.social_links?.linkedin || card.social_links?.twitter || card.social_links?.instagram || card.social_links?.facebook || card.social_links?.website) && (
               <div className="flex gap-3 justify-center mb-6 flex-wrap">
                 {card.social_links?.linkedin && (
-                  <a href={card.social_links.linkedin} target="_blank" rel="noopener noreferrer">
+                  <a href={card.social_links.linkedin} onClick={() => trackClick('linkedin', card.social_links.linkedin)} target="_blank" rel="noopener noreferrer">
                     <Button variant="outline" size="icon" className="rounded-full w-12 h-12">
                       <Linkedin className="w-5 h-5" />
                     </Button>
                   </a>
                 )}
                 {card.social_links?.twitter && (
-                  <a href={card.social_links.twitter} target="_blank" rel="noopener noreferrer">
+                  <a href={card.social_links.twitter} onClick={() => trackClick('twitter', card.social_links.twitter)} target="_blank" rel="noopener noreferrer">
                     <Button variant="outline" size="icon" className="rounded-full w-12 h-12">
                       <Twitter className="w-5 h-5" />
                     </Button>
                   </a>
                 )}
                 {card.social_links?.instagram && (
-                  <a href={card.social_links.instagram} target="_blank" rel="noopener noreferrer">
+                  <a href={card.social_links.instagram} onClick={() => trackClick('instagram', card.social_links.instagram)} target="_blank" rel="noopener noreferrer">
                     <Button variant="outline" size="icon" className="rounded-full w-12 h-12">
                       <Instagram className="w-5 h-5" />
                     </Button>
                   </a>
                 )}
                 {card.social_links?.facebook && (
-                  <a href={card.social_links.facebook} target="_blank" rel="noopener noreferrer">
+                  <a href={card.social_links.facebook} onClick={() => trackClick('facebook', card.social_links.facebook)} target="_blank" rel="noopener noreferrer">
                     <Button variant="outline" size="icon" className="rounded-full w-12 h-12">
                       <Facebook className="w-5 h-5" />
                     </Button>
                   </a>
                 )}
                 {card.social_links?.website && (
-                  <a href={card.social_links.website} target="_blank" rel="noopener noreferrer">
+                  <a href={card.social_links.website} onClick={() => trackClick('website', card.social_links.website)} target="_blank" rel="noopener noreferrer">
                     <Button variant="outline" size="icon" className="rounded-full w-12 h-12">
                       <ExternalLink className="w-5 h-5" />
                     </Button>
@@ -352,17 +361,17 @@ function LeadCaptureModal({ brandColor, submitting, onClose, onSubmit, onSkip })
         className="bg-white w-full sm:max-w-md rounded-2xl p-6 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-xl font-bold mb-1">Antes de guardar el contacto</h2>
-        <p className="text-sm text-gray-600 mb-4">Comparte tus datos para un intercambio recíproco.</p>
+        <h2 className="text-xl font-bold mb-1">Before saving the contact</h2>
+        <p className="text-sm text-gray-600 mb-4">Share your info for a reciprocal exchange.</p>
         <form onSubmit={submit} className="space-y-3">
-          <input required placeholder="Tu nombre *" className="w-full border rounded-lg px-3 py-2" value={lead.name} onChange={(e) => setLead({ ...lead, name: e.target.value })} />
+          <input required placeholder="Your name *" className="w-full border rounded-lg px-3 py-2" value={lead.name} onChange={(e) => setLead({ ...lead, name: e.target.value })} />
           <input required type="email" placeholder="Email *" className="w-full border rounded-lg px-3 py-2" value={lead.email} onChange={(e) => setLead({ ...lead, email: e.target.value })} />
-          <input placeholder="Teléfono" className="w-full border rounded-lg px-3 py-2" value={lead.phone} onChange={(e) => setLead({ ...lead, phone: e.target.value })} />
-          <input placeholder="Empresa" className="w-full border rounded-lg px-3 py-2" value={lead.company} onChange={(e) => setLead({ ...lead, company: e.target.value })} />
+          <input placeholder="Phone" className="w-full border rounded-lg px-3 py-2" value={lead.phone} onChange={(e) => setLead({ ...lead, phone: e.target.value })} />
+          <input placeholder="Company" className="w-full border rounded-lg px-3 py-2" value={lead.company} onChange={(e) => setLead({ ...lead, company: e.target.value })} />
           <div className="flex gap-2 pt-2">
-            <button type="button" onClick={onSkip} className="flex-1 border rounded-lg px-4 py-3 text-sm text-gray-600">Omitir</button>
+            <button type="button" onClick={onSkip} className="flex-1 border rounded-lg px-4 py-3 text-sm text-gray-600">Skip</button>
             <button type="submit" disabled={submitting} className="flex-[2] text-white rounded-lg px-4 py-3 text-sm font-semibold" style={{ backgroundColor: brandColor }}>
-              {submitting ? 'Enviando…' : 'Guardar contacto'}
+              {submitting ? 'Sending…' : 'Save contact'}
             </button>
           </div>
         </form>

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { nanoid } from 'nanoid';
 import { prisma } from '../db.js';
-import { requireAuth, requireAdmin } from '../middleware/auth.js';
+import { requireAuth, requireAdmin, resolveCompanyScope } from '../middleware/auth.js';
 import { generateQrPng } from '../lib/qr.js';
 import { recordAudit } from '../lib/audit.js';
 
@@ -62,21 +62,24 @@ async function mergedUrlView(url) {
 }
 
 // List URLs (optionally filtered by company / short_code / active_profile presence).
-router.get('/', requireAuth, async (req, res) => {
-  const where = {};
-  if (req.query.company_id) where.company_id = req.query.company_id;
-  if (req.query.short_code) where.short_code = req.query.short_code;
-  if (req.query.permanent_slug) where.short_code = req.query.permanent_slug;
-  const list = await prisma.url.findMany({
-    where,
-    include: { active_profile: true, _count: { select: { interactions: true } } },
-    orderBy: { created_at: 'desc' },
-  });
-  const views = await Promise.all(list.map(async (u) => ({
-    ...(await mergedUrlView(u)),
-    tap_count: u._count.interactions,
-  })));
-  res.json(views);
+router.get('/', requireAuth, async (req, res, next) => {
+  try {
+    const scoped = resolveCompanyScope(req);
+    const where = {};
+    if (scoped) where.company_id = scoped;
+    if (req.query.short_code) where.short_code = req.query.short_code;
+    if (req.query.permanent_slug) where.short_code = req.query.permanent_slug;
+    const list = await prisma.url.findMany({
+      where,
+      include: { active_profile: true, _count: { select: { interactions: true } } },
+      orderBy: { created_at: 'desc' },
+    });
+    const views = await Promise.all(list.map(async (u) => ({
+      ...(await mergedUrlView(u)),
+      tap_count: u._count.interactions,
+    })));
+    res.json(views);
+  } catch (err) { next(err); }
 });
 
 router.get('/:id', requireAuth, async (req, res) => {
@@ -259,9 +262,12 @@ router.patch('/:id', requireAuth, async (req, res) => {
   profilePatch = await applyLockedFields(profilePatch, url.active_profile);
   const norm = (s) => (s || '').trim().toLowerCase();
   const nameProvided = typeof body.full_name === 'string' && body.full_name.trim().length > 0;
-  const nameChanged = nameProvided
+  const rawNameChanged = nameProvided
     && url.active_profile
     && norm(url.active_profile.full_name) !== norm(body.full_name);
+  // `force_update=true` overrides the name-change → reassignment heuristic
+  // (typo correction: keep same profile, just rename it).
+  const nameChanged = rawNameChanged && body.force_update !== true;
 
   const result = await prisma.$transaction(async (tx) => {
     if (Object.keys(urlPatch).length) {

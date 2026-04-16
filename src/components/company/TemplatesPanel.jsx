@@ -12,15 +12,15 @@ import { Plus, Trash2, Edit2, Layers, Lock } from "lucide-react";
 import toast from "react-hot-toast";
 
 const LOCKABLE_FIELDS = [
-  { key: 'full_name', label: 'Nombre' },
-  { key: 'title', label: 'Cargo' },
-  { key: 'company_name', label: 'Empresa (texto)' },
+  { key: 'full_name', label: 'Name' },
+  { key: 'title', label: 'Title' },
+  { key: 'company_name', label: 'Company (text)' },
   { key: 'email', label: 'Email' },
-  { key: 'phone', label: 'Teléfono' },
+  { key: 'phone', label: 'Phone' },
   { key: 'bio', label: 'Bio' },
-  { key: 'photo_url', label: 'Foto' },
-  { key: 'social_links', label: 'Redes sociales' },
-  { key: 'messaging_links', label: 'Mensajería' },
+  { key: 'photo_url', label: 'Photo' },
+  { key: 'social_links', label: 'Socials' },
+  { key: 'messaging_links', label: 'Messaging' },
 ];
 
 export default function TemplatesPanel({ company }) {
@@ -38,7 +38,7 @@ export default function TemplatesPanel({ company }) {
     mutationFn: (id) => api.entities.Template.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['templates'] });
-      toast.success('Plantilla eliminada.');
+      toast.success('Template deleted.');
     },
     onError: (err) => toast.error(err.message),
   });
@@ -49,21 +49,21 @@ export default function TemplatesPanel({ company }) {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-              <Layers className="w-5 h-5" /> Plantillas ({templates.length})
+              <Layers className="w-5 h-5" /> Templates ({templates.length})
             </h2>
-            <p className="text-sm text-gray-500">Define campos comunes y bloqueos para varios perfiles a la vez.</p>
+            <p className="text-sm text-gray-500">Define shared fields and locks for multiple profiles at once.</p>
           </div>
           <Button onClick={() => setCreating(true)} className="bg-gray-900 hover:bg-gray-800">
-            <Plus className="w-4 h-4 mr-2" /> Nueva plantilla
+            <Plus className="w-4 h-4 mr-2" /> New template
           </Button>
         </div>
 
         {isLoading ? (
-          <p className="text-center text-gray-500 py-10">Cargando…</p>
+          <p className="text-center text-gray-500 py-10">Loading…</p>
         ) : templates.length === 0 ? (
           <div className="text-center py-12 text-gray-500">
             <Layers className="w-10 h-10 mx-auto mb-3 text-gray-300" />
-            <p>Aún no creaste plantillas.</p>
+            <p>No templates created yet.</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -72,7 +72,7 @@ export default function TemplatesPanel({ company }) {
                 <div>
                   <div className="flex items-center gap-2">
                     <h3 className="font-semibold text-gray-900">{t.name}</h3>
-                    <Badge variant="outline">{t.profile_count || 0} perfiles</Badge>
+                    <Badge variant="outline">{t.profile_count || 0} profiles</Badge>
                   </div>
                   <div className="flex flex-wrap gap-1 mt-2">
                     {(t.locked_fields || []).map((f) => (
@@ -82,7 +82,7 @@ export default function TemplatesPanel({ company }) {
                     ))}
                     {t.common_links && Object.keys(t.common_links).length > 0 && (
                       <span className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full">
-                        {Object.keys(t.common_links).length} links comunes
+                        {Object.keys(t.common_links).length} common links
                       </span>
                     )}
                   </div>
@@ -128,7 +128,7 @@ function TemplateFormModal({ company, template, onClose }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['templates'] });
       queryClient.invalidateQueries({ queryKey: ['digitalCards'] });
-      toast.success(isEdit ? 'Plantilla actualizada.' : 'Plantilla creada.');
+      toast.success(isEdit ? 'Template updated.' : 'Template created.');
       onClose();
     },
     onError: (err) => toast.error(err.message),
@@ -148,17 +148,17 @@ function TemplateFormModal({ company, template, onClose }) {
   return (
     <Dialog open onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>{isEdit ? 'Editar plantilla' : 'Nueva plantilla'}</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{isEdit ? 'Edit template' : 'New template'}</DialogTitle></DialogHeader>
 
         <form onSubmit={(e) => { e.preventDefault(); mutation.mutate(); }} className="space-y-5">
           <div className="space-y-2">
-            <Label>Nombre *</Label>
-            <Input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Ventas / Directivos / Marketing..." />
+            <Label>Name *</Label>
+            <Input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Sales / Directors / Marketing..." />
           </div>
 
           <div className="space-y-2">
-            <Label className="text-base font-semibold">Links comunes</Label>
-            <p className="text-xs text-gray-500">Estos se aplican a todos los perfiles con esta plantilla y reemplazan el valor individual.</p>
+            <Label className="text-base font-semibold">Common links</Label>
+            <p className="text-xs text-gray-500">These apply to every profile using this template and override the individual value.</p>
             <div className="grid grid-cols-2 gap-3">
               {['linkedin', 'twitter', 'instagram', 'website'].map((k) => (
                 <div key={k} className="space-y-1">
@@ -170,7 +170,7 @@ function TemplateFormModal({ company, template, onClose }) {
           </div>
 
           <div className="space-y-2">
-            <Label className="text-base font-semibold">Campos bloqueados para editar por el miembro</Label>
+            <Label className="text-base font-semibold">Fields members cannot edit</Label>
             <div className="grid grid-cols-3 gap-2">
               {LOCKABLE_FIELDS.map((f) => (
                 <label key={f.key} className="flex items-center gap-2 text-sm cursor-pointer">
@@ -186,7 +186,7 @@ function TemplateFormModal({ company, template, onClose }) {
           </div>
 
           <div className="space-y-2">
-            <Label className="text-base font-semibold">Diseño por defecto</Label>
+            <Label className="text-base font-semibold">Default design</Label>
             <div className="grid grid-cols-3 gap-3">
               <div className="space-y-1">
                 <Label className="text-sm text-gray-600">Template</Label>
@@ -219,9 +219,9 @@ function TemplateFormModal({ company, template, onClose }) {
           </div>
 
           <div className="flex justify-end gap-2 pt-2 border-t">
-            <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
+            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
             <Button type="submit" disabled={mutation.isPending} className="bg-gray-900 hover:bg-gray-800">
-              {mutation.isPending ? 'Guardando…' : (isEdit ? 'Guardar' : 'Crear')}
+              {mutation.isPending ? 'Saving…' : (isEdit ? 'Save' : 'Create')}
             </Button>
           </div>
         </form>

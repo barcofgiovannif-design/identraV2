@@ -52,7 +52,7 @@ export default function HardwareTable({ companies = [] }) {
     mutationFn: (id) => api.entities.HardwareCard.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['hardware'] });
-      toast.success('Tarjeta eliminada.');
+      toast.success('Card deleted.');
     },
     onError: (err) => toast.error(err.message),
   });
@@ -65,7 +65,7 @@ export default function HardwareTable({ companies = [] }) {
     onError: (err) => toast.error(err.message),
   });
 
-  const formatDate = (d) => d ? new Date(d).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+  const formatDate = (d) => d ? new Date(d).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
   return (
     <Card>
@@ -73,39 +73,39 @@ export default function HardwareTable({ companies = [] }) {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
           <div>
             <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-              <Cpu className="w-5 h-5" /> Inventario NFC ({hardware.length})
+              <Cpu className="w-5 h-5" /> NFC Inventory ({hardware.length})
             </h2>
-            <p className="text-sm text-gray-500">Registra lotes de tarjetas, asigna UIDs y gestiona envíos.</p>
+            <p className="text-sm text-gray-500">Register batches, assign NFC UIDs, and manage shipments.</p>
           </div>
           <div className="flex gap-2">
             <div className="relative w-56">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="UID, lote, cliente…" className="pl-9" />
+              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="UID, batch, customer…" className="pl-9" />
             </div>
             <select className="border border-gray-200 rounded-md px-2 text-sm" value={companyFilter} onChange={(e) => setCompanyFilter(e.target.value)}>
-              <option value="">Todos los clientes</option>
+              <option value="">All customers</option>
               {companies.map((c) => <option key={c.id} value={c.id}>{c.company_name}</option>)}
             </select>
             <select className="border border-gray-200 rounded-md px-2 text-sm" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-              <option value="">Todos los estados</option>
-              <option value="inventory">Inventario</option>
-              <option value="assigned">Asignada</option>
-              <option value="shipped">Enviada</option>
-              <option value="lost">Perdida</option>
-              <option value="replaced">Reemplazada</option>
+              <option value="">All statuses</option>
+              <option value="inventory">Inventory</option>
+              <option value="assigned">Assigned</option>
+              <option value="shipped">Shipped</option>
+              <option value="lost">Lost</option>
+              <option value="replaced">Replaced</option>
             </select>
             <Button onClick={() => setAdding(true)} className="bg-gray-900 hover:bg-gray-800">
-              <Plus className="w-4 h-4 mr-2" /> Añadir lote
+              <Plus className="w-4 h-4 mr-2" /> Add batch
             </Button>
           </div>
         </div>
 
         {isLoading ? (
-          <p className="text-center text-gray-500 py-10">Cargando…</p>
+          <p className="text-center text-gray-500 py-10">Loading…</p>
         ) : filtered.length === 0 ? (
           <div className="text-center py-12 text-gray-500">
             <Cpu className="w-10 h-10 mx-auto mb-3 text-gray-300" />
-            <p>No hay tarjetas físicas registradas.</p>
+            <p>No physical cards registered yet.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -113,11 +113,11 @@ export default function HardwareTable({ companies = [] }) {
               <thead>
                 <tr className="border-b text-left text-gray-500 text-xs uppercase tracking-wider">
                   <th className="py-2 pr-3">NFC UID</th>
-                  <th className="py-2 pr-3">Lote</th>
-                  <th className="py-2 pr-3">Cliente</th>
-                  <th className="py-2 pr-3">URL asignada</th>
-                  <th className="py-2 pr-3">Estado</th>
-                  <th className="py-2 pr-3">Enviada</th>
+                  <th className="py-2 pr-3">Batch</th>
+                  <th className="py-2 pr-3">Customer</th>
+                  <th className="py-2 pr-3">Assigned URL</th>
+                  <th className="py-2 pr-3">Status</th>
+                  <th className="py-2 pr-3">Shipped</th>
                   <th className="py-2 pr-3"></th>
                 </tr>
               </thead>
@@ -143,11 +143,11 @@ export default function HardwareTable({ companies = [] }) {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="inventory">Inventario</SelectItem>
-                          <SelectItem value="assigned">Asignada</SelectItem>
-                          <SelectItem value="shipped">Enviada</SelectItem>
-                          <SelectItem value="lost">Perdida</SelectItem>
-                          <SelectItem value="replaced">Reemplazada</SelectItem>
+                          <SelectItem value="inventory">Inventory</SelectItem>
+                          <SelectItem value="assigned">Assigned</SelectItem>
+                          <SelectItem value="shipped">Shipped</SelectItem>
+                          <SelectItem value="lost">Lost</SelectItem>
+                          <SelectItem value="replaced">Replaced</SelectItem>
                         </SelectContent>
                       </Select>
                     </td>
@@ -186,7 +186,7 @@ function AddHardwareModal({ companies, onClose }) {
         .map((s) => s.trim())
         .filter(Boolean);
       const quantity = uids.length > 0 ? uids.length : Math.max(0, parseInt(form.quantity, 10) || 0);
-      if (!form.company_id || quantity === 0) throw new Error('Cliente y cantidad son requeridos.');
+      if (!form.company_id || quantity === 0) throw new Error('Customer and quantity are required.');
       const results = [];
       for (let i = 0; i < quantity; i++) {
         const nfc_uid = uids[i] || null;
@@ -202,7 +202,7 @@ function AddHardwareModal({ companies, onClose }) {
     },
     onSuccess: (arr) => {
       queryClient.invalidateQueries({ queryKey: ['hardware'] });
-      toast.success(`${arr.length} tarjeta(s) añadidas al inventario.`);
+      toast.success(`${arr.length} card(s) added to inventory.`);
       onClose();
     },
     onError: (err) => toast.error(err.message),
@@ -211,27 +211,27 @@ function AddHardwareModal({ companies, onClose }) {
   return (
     <Dialog open onOpenChange={onClose}>
       <DialogContent className="max-w-lg">
-        <DialogHeader><DialogTitle>Añadir lote al inventario</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>Add batch to inventory</DialogTitle></DialogHeader>
         <form onSubmit={(e) => { e.preventDefault(); submit.mutate(); }} className="space-y-4">
           <div className="space-y-2">
-            <Label>Cliente *</Label>
+            <Label>Customer *</Label>
             <Select value={form.company_id} onValueChange={(v) => setForm({ ...form, company_id: v })}>
-              <SelectTrigger><SelectValue placeholder="Selecciona cliente" /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder="Select customer" /></SelectTrigger>
               <SelectContent>
                 {companies.map((c) => <SelectItem key={c.id} value={c.id}>{c.company_name}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Número de lote</Label>
-            <Input value={form.batch_number} onChange={(e) => setForm({ ...form, batch_number: e.target.value })} placeholder="Ej: LOT-2026-001" />
+            <Label>Batch number</Label>
+            <Input value={form.batch_number} onChange={(e) => setForm({ ...form, batch_number: e.target.value })} placeholder="e.g. LOT-2026-001" />
           </div>
           <div className="space-y-2">
-            <Label>Cantidad (si no pegas UIDs)</Label>
+            <Label>Quantity (when not pasting UIDs)</Label>
             <Input type="number" min={1} max={500} value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} />
           </div>
           <div className="space-y-2">
-            <Label>NFC UIDs (uno por línea o separados por coma)</Label>
+            <Label>NFC UIDs (one per line or comma-separated)</Label>
             <textarea
               className="w-full border rounded-lg p-2 text-sm font-mono"
               rows={4}
@@ -239,12 +239,12 @@ function AddHardwareModal({ companies, onClose }) {
               onChange={(e) => setForm({ ...form, uids: e.target.value })}
               placeholder="04A1B2C3D4E5F6&#10;04A1B2C3D4E5F7"
             />
-            <p className="text-xs text-gray-500">Si pegas UIDs, la cantidad se deduce de la cantidad de líneas.</p>
+            <p className="text-xs text-gray-500">If you paste UIDs, quantity is inferred from the number of lines.</p>
           </div>
           <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
+            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
             <Button type="submit" disabled={submit.isPending} className="bg-gray-900 hover:bg-gray-800">
-              {submit.isPending ? 'Creando…' : 'Crear'}
+              {submit.isPending ? 'Creating…' : 'Create'}
             </Button>
           </div>
         </form>
