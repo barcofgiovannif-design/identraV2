@@ -4,21 +4,39 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Trash2, Eye, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, Trash2, Eye, ChevronUp, AlertTriangle, LogIn } from "lucide-react";
+import toast from "react-hot-toast";
 
 export default function UsersTable({ users, purchases, onRefresh }) {
   const [search, setSearch] = useState("");
+  const [atRiskOnly, setAtRiskOnly] = useState(false);
   const [expandedUser, setExpandedUser] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [impersonating, setImpersonating] = useState(null);
 
   const filtered = users.filter(u => {
+    if (atRiskOnly && !u.at_risk) return false;
     const q = search.toLowerCase();
     return (
       (u.email || "").toLowerCase().includes(q) ||
-      (u.full_name || "").toLowerCase().includes(q)
+      (u.full_name || "").toLowerCase().includes(q) ||
+      (u.company_name || "").toLowerCase().includes(q)
     );
   });
+
+  const handleImpersonate = async (u) => {
+    setImpersonating(u.id);
+    try {
+      await api.admin.impersonate(u.id);
+      toast.success(`Now viewing as ${u.email}`);
+      // Redirect into the customer view so you're inside their dashboard.
+      window.location.href = u.company_id ? '/CompanyDashboard' : '/SuperAdminDashboard';
+    } catch (e) {
+      toast.error(e.message);
+      setImpersonating(null);
+    }
+  };
 
   const getUserPurchases = (u) =>
     purchases.filter(p => p.customer_email === u.email);
@@ -39,11 +57,17 @@ export default function UsersTable({ users, purchases, onRefresh }) {
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <CardTitle>Users ({users.length})</CardTitle>
-          <div className="relative w-64">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <Input placeholder="Search users..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+          <div className="flex gap-2 items-center">
+            <label className="flex items-center gap-1 text-sm text-gray-600 cursor-pointer">
+              <input type="checkbox" checked={atRiskOnly} onChange={(e) => setAtRiskOnly(e.target.checked)} />
+              At risk only
+            </label>
+            <div className="relative w-64">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Input placeholder="Search users, company…" value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+            </div>
           </div>
         </div>
       </CardHeader>
@@ -70,15 +94,37 @@ export default function UsersTable({ users, purchases, onRefresh }) {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3">
                     <div className="text-right hidden md:block">
                       <p className="text-sm font-semibold text-gray-900">${total.toFixed(2)}</p>
                       <p className="text-xs text-gray-400">{userPurchases.length} order{userPurchases.length !== 1 ? 's' : ''}</p>
                     </div>
-                    <Badge variant="outline" className={u.role === 'admin' ? 'border-purple-300 text-purple-700' : 'border-gray-200 text-gray-600'}>
+                    <div className="hidden lg:block text-right">
+                      <p className="text-xs text-gray-400">Last login</p>
+                      <p className={`text-xs ${u.at_risk ? 'text-red-600' : 'text-gray-600'}`}>
+                        {u.last_login_at ? formatDate(u.last_login_at) : 'Never'}
+                      </p>
+                    </div>
+                    {u.at_risk && (
+                      <Badge variant="outline" className="border-red-300 text-red-700 gap-1">
+                        <AlertTriangle className="w-3 h-3" /> at risk
+                      </Badge>
+                    )}
+                    <Badge variant="outline" className={u.role === 'superadmin' ? 'border-purple-300 text-purple-700' : u.role === 'support' ? 'border-blue-300 text-blue-700' : 'border-gray-200 text-gray-600'}>
                       {u.role || 'user'}
                     </Badge>
-                    <p className="text-xs text-gray-400 hidden lg:block">{formatDate(u.created_at)}</p>
+                    {u.company_name && (
+                      <Badge variant="outline" className="text-xs">{u.company_name}</Badge>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleImpersonate(u)}
+                      disabled={impersonating === u.id}
+                      title="Impersonate this user"
+                    >
+                      <LogIn className="w-4 h-4" />
+                    </Button>
                     <Button variant="ghost" size="sm" onClick={() => setExpandedUser(isExpanded ? null : u.id)}>
                       {isExpanded ? <ChevronUp className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </Button>

@@ -3,7 +3,8 @@ import { api } from "@/api/client";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "./utils";
 import { Button } from "@/components/ui/button";
-import { LogOut, Building2, LayoutDashboard, Users, UserCircle } from "lucide-react";
+import { LogOut, LayoutDashboard, Users, UserCircle, ShieldAlert } from "lucide-react";
+import toast from "react-hot-toast";
 
 export default function Layout({ children, currentPageName }) {
   const [user, setUser] = useState(null);
@@ -24,7 +25,17 @@ export default function Layout({ children, currentPageName }) {
   };
 
   const handleLogout = () => {
-    api.auth.logout();
+    api.auth.logout('/');
+  };
+
+  const stopImpersonating = async () => {
+    try {
+      await api.admin.stopImpersonate();
+      toast.success('Back to your platform admin account.');
+      window.location.href = '/SuperAdminDashboard';
+    } catch (e) {
+      toast.error(e.message);
+    }
   };
 
   // Public pages (no layout needed)
@@ -36,6 +47,15 @@ export default function Layout({ children, currentPageName }) {
   // Authenticated layout
   return (
     <div className="min-h-screen bg-gray-50">
+      {user?.impersonating && (
+        <div className="bg-amber-500 text-amber-950 px-6 py-2 text-sm flex items-center justify-center gap-3">
+          <ShieldAlert className="w-4 h-4" />
+          <span>You are impersonating <strong>{user.email}</strong>. Actions are recorded in the audit log.</span>
+          <Button size="sm" variant="outline" className="border-amber-800/40 bg-amber-100 text-amber-900 hover:bg-amber-200" onClick={stopImpersonating}>
+            Exit impersonation
+          </Button>
+        </div>
+      )}
       {/* Navigation Header */}
       <nav className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-6">

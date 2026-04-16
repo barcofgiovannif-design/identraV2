@@ -1,8 +1,43 @@
 import { Router } from 'express';
 import { prisma } from '../db.js';
-import { requireAdmin } from '../middleware/auth.js';
+import { requireAdmin, requireAuth, signSessionToken, setSessionCookie } from '../middleware/auth.js';
+import { recordAudit } from '../lib/audit.js';
 
 const router = Router();
+
+// Impersonate a user (platform staff only). Swaps the session cookie.
+router.post('/impersonate/:user_id', requireAdmin, async (req, res) => {
+  const target = await prisma.user.findUnique({ where: { id: req.params.user_id } });
+  if (!target) return res.status(404).json({ error: 'User not found' });
+  if (target.id === req.user.id) return res.status(400).json({ error: 'Cannot impersonate yourself' });
+  const jwt = signSessionToken(target.id, req.user.id);
+  setSessionCookie(res, jwt);
+  recordAudit(req, {
+    company_id: target.company_id || req.user.company_id || 'platform',
+    action: 'admin.impersonate_start',
+    entity_type: 'user',
+    entity_id: target.id,
+    metadata: { impersonator: req.user.email, target: target.email },
+  });
+  res.json({ success: true, user: target });
+});
+
+// Exit impersonation: restore original admin session.
+router.post('/stop-impersonate', requireAuth, async (req, res) => {
+  if (!req.user.impersonated_by) return res.status(400).json({ error: 'Not impersonating' });
+  const original = await prisma.user.findUnique({ where: { id: req.user.impersonated_by } });
+  if (!original) return res.status(404).json({ error: 'Original admin missing' });
+  const jwt = signSessionToken(original.id);
+  setSessionCookie(res, jwt);
+  recordAudit({ user: original }, {
+    company_id: req.user.company_id || 'platform',
+    action: 'admin.impersonate_end',
+    entity_type: 'user',
+    entity_id: req.user.id,
+    metadata: { impersonator: original.email, target: req.user.email },
+  });
+  res.json({ success: true, user: original });
+});
 
 // Platform-wide aggregate stats for the super-admin dashboard.
 router.get('/stats', requireAdmin, async (req, res) => {

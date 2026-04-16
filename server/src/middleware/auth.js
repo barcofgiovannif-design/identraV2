@@ -4,8 +4,11 @@ import { prisma } from '../db.js';
 const SECRET = process.env.JWT_SECRET || 'dev-secret';
 const SESSION_TTL_DAYS = parseInt(process.env.SESSION_TTL_DAYS || '30', 10);
 
-export function signSessionToken(userId) {
-  return jwt.sign({ sub: userId }, SECRET, { expiresIn: `${SESSION_TTL_DAYS}d` });
+// Extra claim `imp` = impersonator user id (platform admin who triggered it).
+export function signSessionToken(userId, impersonatorId = null) {
+  const payload = { sub: userId };
+  if (impersonatorId) payload.imp = impersonatorId;
+  return jwt.sign(payload, SECRET, { expiresIn: `${SESSION_TTL_DAYS}d` });
 }
 
 export function setSessionCookie(res, token) {
@@ -26,8 +29,12 @@ async function loadUserFromReq(req) {
   const token = req.cookies?.session;
   if (!token) return null;
   try {
-    const { sub } = jwt.verify(token, SECRET);
-    return await prisma.user.findUnique({ where: { id: sub } });
+    const decoded = jwt.verify(token, SECRET);
+    const user = await prisma.user.findUnique({ where: { id: decoded.sub } });
+    if (user && decoded.imp) {
+      user.impersonated_by = decoded.imp;
+    }
+    return user;
   } catch {
     return null;
   }

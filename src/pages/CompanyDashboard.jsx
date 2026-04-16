@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Upload } from "lucide-react";
-import CreateCardModal from "../components/company/CreateCardModal";
+import CardFormModal from "../components/company/CardFormModal";
 import CardsList from "../components/company/CardsList";
 import StatsOverview from "../components/company/StatsOverview";
 import ActivityPanel from "../components/company/ActivityPanel";
@@ -161,7 +161,7 @@ export default function CompanyDashboard() {
       </div>
 
       {showCreateModal && (
-        <CreateCardModal
+        <CardFormModal
           company={company}
           onClose={() => setShowCreateModal(false)}
           onSuccess={() => {

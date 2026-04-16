@@ -81,6 +81,7 @@ router.post('/verify', async (req, res) => {
   });
 
   await prisma.magicToken.update({ where: { token }, data: { used_at: new Date() } });
+  await prisma.user.update({ where: { id: user.id }, data: { last_login_at: new Date() } });
 
   const jwt = signSessionToken(user.id);
   setSessionCookie(res, jwt);
@@ -88,7 +89,12 @@ router.post('/verify', async (req, res) => {
 });
 
 router.get('/me', requireAuth, (req, res) => {
-  res.json(req.user);
+  // Include impersonator info so the UI can surface a banner + "stop" button.
+  res.json({
+    ...req.user,
+    impersonating: Boolean(req.user.impersonated_by),
+    impersonated_by: req.user.impersonated_by || null,
+  });
 });
 
 router.patch('/me', requireAuth, async (req, res) => {

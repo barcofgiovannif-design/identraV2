@@ -4,6 +4,7 @@ import { api } from "@/api/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   TrendingUp, Activity, Smartphone, Globe2, Target, Clock, MapPin, Monitor, Apple,
 } from "lucide-react";
@@ -59,11 +60,31 @@ export default function ActivityPanel({ company }) {
         </div>
       </div>
 
-      {funnel && <FunnelCard funnel={funnel} />}
+      <Tabs defaultValue="overview" className="space-y-4">
+        <TabsList className="bg-white border border-gray-200">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="members">Members</TabsTrigger>
+          <TabsTrigger value="geo">Geography</TabsTrigger>
+          <TabsTrigger value="devices">Devices</TabsTrigger>
+        </TabsList>
 
-      <MemberLeaderboard members={members.members} onDrill={setDrillMember} />
+        <TabsContent value="overview" className="space-y-4">
+          {funnel && <FunnelCard funnel={funnel} />}
+          {members.members && <MemberLeaderboard members={members.members.slice(0, 5)} onDrill={setDrillMember} compact />}
+        </TabsContent>
 
-      {breakdown && <BreakdownCards breakdown={breakdown} />}
+        <TabsContent value="members">
+          <MemberLeaderboard members={members.members || []} onDrill={setDrillMember} />
+        </TabsContent>
+
+        <TabsContent value="geo">
+          {breakdown && <GeoTab breakdown={breakdown} />}
+        </TabsContent>
+
+        <TabsContent value="devices">
+          {breakdown && <DevicesTab breakdown={breakdown} />}
+        </TabsContent>
+      </Tabs>
 
       {drillMember && (
         <MemberTimelineModal member={drillMember} onClose={() => setDrillMember(null)} />
@@ -221,13 +242,9 @@ function MemberLeaderboard({ members, onDrill }) {
   );
 }
 
-// Tier 2 — Geo + device breakdown
-function BreakdownCards({ breakdown }) {
+function GeoTab({ breakdown }) {
   const peakCountry = Math.max(1, ...breakdown.by_country.map((d) => d.count));
   const peakCity = Math.max(1, ...breakdown.by_city.map((d) => d.count));
-  const peakHour = Math.max(1, ...breakdown.by_hour.map((d) => d.count));
-  const deviceIcon = (k) => k === 'ios' ? Apple : k === 'android' ? Smartphone : k === 'desktop' ? Monitor : Smartphone;
-
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <Card>
@@ -261,7 +278,15 @@ function BreakdownCards({ breakdown }) {
           )}
         </CardContent>
       </Card>
+    </div>
+  );
+}
 
+function DevicesTab({ breakdown }) {
+  const peakHour = Math.max(1, ...breakdown.by_hour.map((d) => d.count));
+  const deviceIcon = (k) => k === 'ios' ? Apple : k === 'android' ? Smartphone : k === 'desktop' ? Monitor : Smartphone;
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <Card>
         <CardContent className="p-5">
           <h3 className="font-semibold mb-3 flex items-center gap-2"><Smartphone className="w-4 h-4" /> Device / OS / Browser</h3>

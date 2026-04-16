@@ -110,6 +110,8 @@ export const api = {
 
   admin: {
     stats: (params) => http('GET', '/admin/stats', { query: params }),
+    impersonate: (user_id) => http('POST', `/admin/impersonate/${user_id}`),
+    stopImpersonate: () => http('POST', '/admin/stop-impersonate'),
   },
 
   leads: {

@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { QrCode, ExternalLink, Edit2, Search, Copy, Check } from "lucide-react";
-import EditCardModal from "./EditCardModal";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { QrCode, ExternalLink, Edit2, Search, Copy, Check, Share2, Mail, MessageCircle } from "lucide-react";
+import CardFormModal from "./CardFormModal";
 import toast from "react-hot-toast";
 
 const SORTS = [
@@ -73,8 +74,10 @@ export default function CardsList({ cards, company, isLoading }) {
     }
   };
 
+  const publicLinkFor = (card) => `${publicBase}/Card/${card.permanent_slug}`;
+
   const copyLink = async (card) => {
-    const link = `${publicBase}/Card/${card.permanent_slug}`;
+    const link = publicLinkFor(card);
     try {
       await navigator.clipboard.writeText(link);
       setCopied(card.id);
@@ -83,6 +86,19 @@ export default function CardsList({ cards, company, isLoading }) {
     } catch {
       window.prompt('Copy this link:', link);
     }
+  };
+
+  const shareViaWhatsApp = (card) => {
+    const name = card.full_name || 'our card';
+    const text = `Here's ${name}'s digital business card: ${publicLinkFor(card)}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+  };
+
+  const shareViaEmail = (card) => {
+    const name = card.full_name || 'Digital card';
+    const subject = `${name} — digital business card`;
+    const body = `Hi,\n\nHere is ${name}'s digital business card — all their contact info in one link:\n\n${publicLinkFor(card)}\n\nTap "Save to Contacts" at the bottom to add them to your phone.`;
+    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
 
   if (isLoading) {
@@ -177,15 +193,37 @@ export default function CardsList({ cards, company, isLoading }) {
                   </div>
 
                   <div className="flex gap-1 shrink-0">
-                    <Button variant="outline" size="sm" onClick={() => copyLink(card)} className="rounded-lg" title="Copy public link">
-                      {copied === card.id ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
-                    </Button>
                     <Button variant="outline" size="sm" onClick={() => window.open(`/Card/${card.permanent_slug}`, '_blank')} className="rounded-lg" title="View public card">
                       <ExternalLink className="w-4 h-4" />
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => handleDownloadQR(card)} className="rounded-lg" title="Download QR">
-                      <QrCode className="w-4 h-4" />
-                    </Button>
+
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="rounded-lg" title="Share">
+                          <Share2 className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => copyLink(card)}>
+                          {copied === card.id ? <Check className="w-4 h-4 mr-2 text-green-600" /> : <Copy className="w-4 h-4 mr-2" />}
+                          Copy public link
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => shareViaWhatsApp(card)}>
+                          <MessageCircle className="w-4 h-4 mr-2" />
+                          Share on WhatsApp
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => shareViaEmail(card)}>
+                          <Mail className="w-4 h-4 mr-2" />
+                          Share via email
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => handleDownloadQR(card)}>
+                          <QrCode className="w-4 h-4 mr-2" />
+                          Download QR (PNG)
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+
                     <Button variant="outline" size="sm" onClick={() => setEditing(card)} className="rounded-lg" title="Edit">
                       <Edit2 className="w-4 h-4" />
                     </Button>
@@ -197,7 +235,7 @@ export default function CardsList({ cards, company, isLoading }) {
         )}
       </CardContent>
 
-      {editing && <EditCardModal card={editing} onClose={() => setEditing(null)} />}
+      {editing && <CardFormModal card={editing} company={company} onClose={() => setEditing(null)} />}
     </Card>
   );
 }
