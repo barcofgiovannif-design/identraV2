@@ -12,6 +12,7 @@ import GenerateCardsModal from "../components/admin/GenerateCardsModal";
 import AllCardsTable from "../components/admin/AllCardsTable";
 import OrdersTable from "../components/admin/OrdersTable";
 import UsersTable from "../components/admin/UsersTable";
+import HardwareTable from "../components/admin/HardwareTable";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 export default function SuperAdminDashboard() {
@@ -125,6 +126,7 @@ export default function SuperAdminDashboard() {
             <TabsTrigger value="orders">Orders</TabsTrigger>
             <TabsTrigger value="companies">Companies</TabsTrigger>
             <TabsTrigger value="cards">Digital Cards</TabsTrigger>
+            <TabsTrigger value="hardware">Hardware</TabsTrigger>
             <TabsTrigger value="revenue">Revenue</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
@@ -143,6 +145,10 @@ export default function SuperAdminDashboard() {
 
           <TabsContent value="cards">
             <AllCardsTable cards={allCards} companies={companies} />
+          </TabsContent>
+
+          <TabsContent value="hardware">
+            <HardwareTable companies={companies} />
           </TabsContent>
 
           <TabsContent value="revenue">

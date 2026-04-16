@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { api } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,6 +10,8 @@ export default function CardPage() {
   const [company, setCompany] = useState(null);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
+  const [showLeadForm, setShowLeadForm] = useState(false);
+  const [leadSubmitting, setLeadSubmitting] = useState(false);
 
   useEffect(() => {
     loadCard();
@@ -40,7 +42,7 @@ export default function CardPage() {
     }
   };
 
-  const handleDownloadVCard = async () => {
+  const doDownloadVCard = async () => {
     setDownloading(true);
     try {
       const response = await api.functions.invoke('generateVCard', { card_id: card.id });
@@ -57,6 +59,35 @@ export default function CardPage() {
       alert('Error downloading contact');
     } finally {
       setDownloading(false);
+    }
+  };
+
+  const handleDownloadVCard = () => {
+    // Lead Capture Mode: ask for the visitor's data before releasing the vCard.
+    const alreadyCaptured = sessionStorage.getItem(`lead:${card.permanent_slug}`);
+    if (card.lead_capture_enabled && !alreadyCaptured) {
+      setShowLeadForm(true);
+    } else {
+      doDownloadVCard();
+    }
+  };
+
+  const handleLeadSubmit = async (leadData) => {
+    setLeadSubmitting(true);
+    try {
+      await fetch(`/api/leads/capture/${encodeURIComponent(card.permanent_slug)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(leadData),
+      });
+      sessionStorage.setItem(`lead:${card.permanent_slug}`, '1');
+      setShowLeadForm(false);
+      doDownloadVCard();
+    } catch {
+      setShowLeadForm(false);
+      doDownloadVCard();
+    } finally {
+      setLeadSubmitting(false);
     }
   };
 
@@ -289,7 +320,7 @@ export default function CardPage() {
         </Card>
         </motion.div>
 
-        <motion.p 
+        <motion.p
           className="text-center text-gray-500 text-sm mt-6"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -297,6 +328,44 @@ export default function CardPage() {
         >
           Powered by Identra
         </motion.p>
+      </div>
+
+      {showLeadForm && (
+        <LeadCaptureModal
+          brandColor={brandColor}
+          submitting={leadSubmitting}
+          onClose={() => setShowLeadForm(false)}
+          onSubmit={handleLeadSubmit}
+          onSkip={() => { setShowLeadForm(false); doDownloadVCard(); }}
+        />
+      )}
+    </div>
+  );
+}
+
+function LeadCaptureModal({ brandColor, submitting, onClose, onSubmit, onSkip }) {
+  const [lead, setLead] = useState({ name: '', email: '', phone: '', company: '' });
+  const submit = (e) => { e.preventDefault(); onSubmit(lead); };
+  return (
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center p-4" onClick={onClose}>
+      <div
+        className="bg-white w-full sm:max-w-md rounded-2xl p-6 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 className="text-xl font-bold mb-1">Antes de guardar el contacto</h2>
+        <p className="text-sm text-gray-600 mb-4">Comparte tus datos para un intercambio recíproco.</p>
+        <form onSubmit={submit} className="space-y-3">
+          <input required placeholder="Tu nombre *" className="w-full border rounded-lg px-3 py-2" value={lead.name} onChange={(e) => setLead({ ...lead, name: e.target.value })} />
+          <input required type="email" placeholder="Email *" className="w-full border rounded-lg px-3 py-2" value={lead.email} onChange={(e) => setLead({ ...lead, email: e.target.value })} />
+          <input placeholder="Teléfono" className="w-full border rounded-lg px-3 py-2" value={lead.phone} onChange={(e) => setLead({ ...lead, phone: e.target.value })} />
+          <input placeholder="Empresa" className="w-full border rounded-lg px-3 py-2" value={lead.company} onChange={(e) => setLead({ ...lead, company: e.target.value })} />
+          <div className="flex gap-2 pt-2">
+            <button type="button" onClick={onSkip} className="flex-1 border rounded-lg px-4 py-3 text-sm text-gray-600">Omitir</button>
+            <button type="submit" disabled={submitting} className="flex-[2] text-white rounded-lg px-4 py-3 text-sm font-semibold" style={{ backgroundColor: brandColor }}>
+              {submitting ? 'Enviando…' : 'Guardar contacto'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

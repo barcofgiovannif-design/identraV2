@@ -7,6 +7,10 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ============================================================
+// AUTH
+// ============================================================
+
 model User {
   id         String   @id @default(cuid())
   email      String   @unique
@@ -35,15 +39,19 @@ model Session {
 }
 
 model MagicToken {
-  id         String   @id @default(cuid())
-  token      String   @unique
+  id         String    @id @default(cuid())
+  token      String    @unique
   email      String
   expires_at DateTime
   used_at    DateTime?
-  created_at DateTime @default(now())
+  created_at DateTime  @default(now())
 
   @@index([email])
 }
+
+// ============================================================
+// TENANT (Company)
+// ============================================================
 
 model Company {
   id                 String   @id @default(cuid())
@@ -57,54 +65,184 @@ model Company {
   stripe_customer_id String?
   created_at         DateTime @default(now())
   updated_at         DateTime @updatedAt
-  cards              DigitalCard[]
-  purchases          Purchase[]
+
+  urls          Url[]
+  profiles      Profile[]
+  hardwareCards HardwareCard[]
+  leads         Lead[]
+  purchases     Purchase[]
 
   @@index([email])
 }
 
-model DigitalCard {
+// ============================================================
+// URL — PERMANENT. Never changes. Decoupled from person/profile.
+// ============================================================
+
+model Url {
+  id                 String   @id @default(cuid())
+  company_id         String
+  short_code         String   @unique
+  qr_code_url        String?
+  is_active          Boolean  @default(true)
+  active_profile_id  String?  @unique
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+
+  company         Company           @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  active_profile  Profile?          @relation("UrlActiveProfile", fields: [active_profile_id], references: [id], onDelete: SetNull)
+  assignments     UrlAssignment[]
+  hardware_cards  HardwareCard[]
+  interactions    Interaction[]
+  leads           Lead[]
+
+  @@index([company_id])
+  @@index([short_code])
+}
+
+// ============================================================
+// PROFILE — The person's data. Mutable. Replaced on reassignment.
+// ============================================================
+
+model Profile {
   id              String   @id @default(cuid())
   company_id      String
-  permanent_slug  String   @unique
-  full_name       String
+  full_name       String?
   title           String?
   company_name    String?
   phone           String?
   email           String?
-  overview        String?  @db.Text
+  bio             String?  @db.Text
+  photo_url       String?
   social_links    Json?
   messaging_links Json?
-  qr_code_url     String?
-  status          String   @default("active")
   template        String?  @default("modern")
   font_style      String?  @default("sans")
   custom_color    String?  @default("#000000")
+  lead_capture_enabled Boolean @default(false)
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
-  company         Company  @relation(fields: [company_id], references: [id], onDelete: Cascade)
+
+  company     Company @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  active_url  Url?    @relation("UrlActiveProfile")
+  leads       Lead[]
 
   @@index([company_id])
-  @@index([permanent_slug])
 }
 
+// ============================================================
+// URL ASSIGNMENT — Audit trail of which profile a URL pointed to.
+// ============================================================
+
+model UrlAssignment {
+  id               String    @id @default(cuid())
+  url_id           String
+  profile_snapshot Json       // archived profile fields at time of unassignment
+  assigned_at      DateTime
+  unassigned_at    DateTime?
+  created_at       DateTime  @default(now())
+
+  url Url @relation(fields: [url_id], references: [id], onDelete: Cascade)
+
+  @@index([url_id])
+}
+
+// ============================================================
+// HARDWARE CARD — Physical metallic NFC card. Re-printable per URL.
+// ============================================================
+
+model HardwareCard {
+  id           String       @id @default(cuid())
+  company_id   String
+  url_id       String?
+  nfc_uid      String?      @unique
+  batch_number String?
+  status       HardwareStatus @default(inventory)
+  shipped_at   DateTime?
+  created_at   DateTime     @default(now())
+  updated_at   DateTime     @updatedAt
+
+  company Company @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  url     Url?    @relation(fields: [url_id], references: [id], onDelete: SetNull)
+
+  @@index([company_id])
+  @@index([url_id])
+}
+
+enum HardwareStatus {
+  inventory
+  assigned
+  shipped
+  lost
+  replaced
+}
+
+// ============================================================
+// INTERACTION — One row per QR/NFC tap or profile view.
+// ============================================================
+
+model Interaction {
+  id           String   @id @default(cuid())
+  url_id       String
+  timestamp    DateTime @default(now())
+  ip_address   String?
+  user_agent   String?  @db.Text
+  device_type  String?
+  referrer     String?  @db.Text
+  geo_country  String?
+  geo_city     String?
+
+  url Url @relation(fields: [url_id], references: [id], onDelete: Cascade)
+
+  @@index([url_id])
+  @@index([timestamp])
+}
+
+// ============================================================
+// LEAD — Captured contact from Lead Capture Mode.
+// ============================================================
+
+model Lead {
+  id          String   @id @default(cuid())
+  url_id      String
+  profile_id  String?
+  company_id  String
+  name        String?
+  email       String?
+  phone       String?
+  company     String?
+  notes       String?  @db.Text
+  captured_at DateTime @default(now())
+
+  url            Url      @relation(fields: [url_id], references: [id], onDelete: Cascade)
+  profile        Profile? @relation(fields: [profile_id], references: [id], onDelete: SetNull)
+  company_rel    Company  @relation(fields: [company_id], references: [id], onDelete: Cascade)
+
+  @@index([url_id])
+  @@index([company_id])
+}
+
+// ============================================================
+// BILLING
+// ============================================================
+
 model Purchase {
-  id                     String   @id @default(cuid())
-  company_id             String?
-  plan_id                String?
-  plan_name              String?
-  customer_name          String?
-  customer_email         String?
-  invoice_number         String?
-  amount                 Float
-  url_count              Int
-  stripe_session_id      String?
-  stripe_payment_intent  String?
-  status                 String   @default("pending")
-  purchase_type          String?
-  created_at             DateTime @default(now())
-  updated_at             DateTime @updatedAt
-  company                Company? @relation(fields: [company_id], references: [id], onDelete: SetNull)
+  id                    String   @id @default(cuid())
+  company_id            String?
+  plan_id               String?
+  plan_name             String?
+  customer_name         String?
+  customer_email        String?
+  invoice_number        String?
+  amount                Float
+  url_count             Int
+  stripe_session_id     String?
+  stripe_payment_intent String?
+  status                String   @default("pending")
+  purchase_type         String?
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
+  company               Company? @relation(fields: [company_id], references: [id], onDelete: SetNull)
 
   @@index([customer_email])
   @@index([stripe_session_id])

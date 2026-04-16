@@ -8,6 +8,9 @@ import CreateCardModal from "../components/company/CreateCardModal";
 import CardsList from "../components/company/CardsList";
 import StatsOverview from "../components/company/StatsOverview";
 import BrandingSettings from "../components/company/BrandingSettings";
+import AnalyticsPanel from "../components/company/AnalyticsPanel";
+import LeadsPanel from "../components/company/LeadsPanel";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function CompanyDashboard() {
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -94,6 +97,9 @@ export default function CompanyDashboard() {
         {/* Stats Overview */}
         <StatsOverview company={company} totalCards={cards.length} />
 
+        {/* Interaction Analytics */}
+        <AnalyticsPanel company={company} />
+
         {/* Available Slots Warning */}
         {availableSlots <= 2 && availableSlots > 0 && (
           <Card className="mb-6 border-amber-200 bg-amber-50">
@@ -118,11 +124,25 @@ export default function CompanyDashboard() {
           </Card>
         )}
 
-        {/* Cards List */}
-        <CardsList cards={cards} company={company} isLoading={isLoading} />
+        <Tabs defaultValue="team" className="space-y-4">
+          <TabsList className="bg-white border border-gray-200">
+            <TabsTrigger value="team">Team Members</TabsTrigger>
+            <TabsTrigger value="leads">Leads</TabsTrigger>
+            <TabsTrigger value="branding">Marca</TabsTrigger>
+          </TabsList>
 
-        {/* Branding Settings */}
-        <BrandingSettings company={company} />
+          <TabsContent value="team">
+            <CardsList cards={cards} company={company} isLoading={isLoading} />
+          </TabsContent>
+
+          <TabsContent value="leads">
+            <LeadsPanel company={company} cards={cards} />
+          </TabsContent>
+
+          <TabsContent value="branding">
+            <BrandingSettings company={company} />
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Create Card Modal */}

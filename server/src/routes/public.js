@@ -3,47 +3,98 @@ import { prisma } from '../db.js';
 
 const router = Router();
 
-// getPublicCard — fetch an active card by slug, no auth.
+// Public: fetch a URL's active profile by short_code (= permanent_slug).
 router.get('/cards/:slug', async (req, res) => {
-  const card = await prisma.digitalCard.findFirst({
-    where: { permanent_slug: req.params.slug, status: 'active' },
+  const url = await prisma.url.findUnique({
+    where: { short_code: req.params.slug },
+    include: { active_profile: true, company: true },
   });
-  if (!card) return res.status(404).json({ error: 'Card not found' });
-  const company = card.company_id
-    ? await prisma.company.findUnique({ where: { id: card.company_id } })
-    : null;
+  if (!url || !url.is_active) return res.status(404).json({ error: 'Card not found' });
+
+  // Also log a "view" interaction so direct visits count too (not only /r/).
+  const ua = req.headers['user-agent'] || '';
+  prisma.interaction.create({
+    data: {
+      url_id: url.id,
+      ip_address: (req.headers['x-forwarded-for']?.split(',')[0] || req.socket?.remoteAddress || '').trim() || null,
+      user_agent: ua || null,
+      device_type: deviceType(ua),
+      referrer: req.headers.referer || null,
+    },
+  }).catch(() => {});
+
+  const profile = url.active_profile;
+  const card = profile ? {
+    id: url.id,
+    permanent_slug: url.short_code,
+    full_name: profile.full_name,
+    title: profile.title,
+    company_name: profile.company_name,
+    phone: profile.phone,
+    email: profile.email,
+    overview: profile.bio,
+    photo_url: profile.photo_url,
+    social_links: profile.social_links,
+    messaging_links: profile.messaging_links,
+    template: profile.template,
+    font_style: profile.font_style,
+    custom_color: profile.custom_color,
+    lead_capture_enabled: profile.lead_capture_enabled,
+    status: 'active',
+  } : {
+    id: url.id,
+    permanent_slug: url.short_code,
+    full_name: 'Unassigned',
+    title: '',
+    company_name: url.company?.company_name || '',
+    status: 'unassigned',
+  };
+
   res.json({
     card,
-    company: company ? { logo_url: company.logo_url, brand_color: company.brand_color } : null,
+    company: url.company ? { logo_url: url.company.logo_url, brand_color: url.company.brand_color } : null,
   });
 });
 
-// generateVCard — return .vcf for any card id.
+// vCard by URL id (kept backwards-compatible with existing frontend calls).
 router.get('/cards/:id/vcard', async (req, res) => {
-  const card = await prisma.digitalCard.findUnique({ where: { id: req.params.id } });
-  if (!card) return res.status(404).json({ error: 'Card not found' });
+  // Accept either URL id or short_code for robustness.
+  const url = await prisma.url.findFirst({
+    where: { OR: [{ id: req.params.id }, { short_code: req.params.id }] },
+    include: { active_profile: true },
+  });
+  if (!url || !url.active_profile) return res.status(404).json({ error: 'Card not found' });
 
   const APP_URL = process.env.APP_URL || 'http://localhost:5173';
-  const cardUrl = `${APP_URL}/Card/${card.permanent_slug}`;
+  const cardUrl = `${APP_URL}/Card/${url.short_code}`;
+  const p = url.active_profile;
 
   let v = 'BEGIN:VCARD\n';
   v += 'VERSION:3.0\n';
-  v += `FN:${card.full_name}\n`;
-  v += `N:${card.full_name.split(' ').reverse().join(';')};;;\n`;
-  if (card.title) v += `TITLE:${card.title}\n`;
-  if (card.company_name) v += `ORG:${card.company_name}\n`;
-  if (card.email) v += `EMAIL;TYPE=WORK:${card.email}\n`;
-  if (card.phone) v += `TEL;TYPE=WORK,VOICE:${card.phone}\n`;
-  if (card.overview) v += `NOTE:${card.overview}\n`;
-  if (card.social_links?.linkedin) v += `URL;TYPE=LinkedIn:${card.social_links.linkedin}\n`;
-  if (card.social_links?.twitter) v += `URL;TYPE=Twitter:${card.social_links.twitter}\n`;
-  if (card.social_links?.website) v += `URL;TYPE=Website:${card.social_links.website}\n`;
+  v += `FN:${p.full_name || ''}\n`;
+  if (p.full_name) v += `N:${p.full_name.split(' ').reverse().join(';')};;;\n`;
+  if (p.title) v += `TITLE:${p.title}\n`;
+  if (p.company_name) v += `ORG:${p.company_name}\n`;
+  if (p.email) v += `EMAIL;TYPE=WORK:${p.email}\n`;
+  if (p.phone) v += `TEL;TYPE=WORK,VOICE:${p.phone}\n`;
+  if (p.bio) v += `NOTE:${p.bio}\n`;
+  if (p.social_links?.linkedin) v += `URL;TYPE=LinkedIn:${p.social_links.linkedin}\n`;
+  if (p.social_links?.twitter) v += `URL;TYPE=Twitter:${p.social_links.twitter}\n`;
+  if (p.social_links?.website) v += `URL;TYPE=Website:${p.social_links.website}\n`;
   v += `URL;TYPE=DigitalCard:${cardUrl}\n`;
   v += 'END:VCARD';
 
   res.setHeader('Content-Type', 'text/vcard');
-  res.setHeader('Content-Disposition', `attachment; filename="${card.full_name.replace(/\s+/g, '-')}.vcf"`);
+  res.setHeader('Content-Disposition', `attachment; filename="${(p.full_name || 'contact').replace(/\s+/g, '-')}.vcf"`);
   res.send(v);
 });
+
+function deviceType(ua = '') {
+  const s = ua.toLowerCase();
+  if (/iphone|ipad|ipod/.test(s)) return 'ios';
+  if (/android/.test(s)) return 'android';
+  if (/windows|macintosh|linux/.test(s)) return 'desktop';
+  return 'other';
+}
 
 export default router;

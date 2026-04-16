@@ -38,6 +38,8 @@ function entity(resource) {
   };
 }
 
+const urlsEntity = entity('urls');
+
 export const api = {
   auth: {
     me: () => http('GET', '/auth/me'),
@@ -55,18 +57,33 @@ export const api = {
   entities: {
     User: entity('users'),
     Company: entity('companies'),
-    DigitalCard: entity('cards'),
+    Url: urlsEntity,
+    // DigitalCard kept as an alias for legacy pages — same shape, backed by /api/urls.
+    DigitalCard: urlsEntity,
     Purchase: entity('purchases'),
     PricingPlan: entity('plans'),
+    Lead: entity('leads'),
+    Interaction: entity('interactions'),
+    HardwareCard: entity('hardware'),
+  },
+
+  urls: {
+    reassign: (id, profileData) => http('POST', `/urls/${id}/reassign`, { json: profileData }),
+    unassign: (id) => http('POST', `/urls/${id}/unassign`),
+    stats: (params) => http('GET', '/interactions/stats', { query: params }),
+  },
+
+  leads: {
+    capture: (short_code, data) => http('POST', `/leads/capture/${encodeURIComponent(short_code)}`, { json: data }),
   },
 
   functions: {
     invoke: async (name, payload = {}) => {
       switch (name) {
         case 'createDigitalCard':
-          return { data: await http('POST', '/cards', { json: payload }) };
+          return { data: await http('POST', '/urls', { json: payload }) };
         case 'generateEmptyCards':
-          return { data: await http('POST', '/cards/bulk', { json: payload }) };
+          return { data: await http('POST', '/urls/bulk', { json: payload }) };
         case 'getPublicCard':
           return { data: await http('GET', `/public/cards/${encodeURIComponent(payload.slug)}`) };
         case 'generateVCard': {
@@ -78,7 +95,7 @@ export const api = {
         case 'sendMagicLink':
           return { data: await http('POST', '/auth/send-magic-link', { json: payload }) };
         case 'sendInvoiceEmail':
-          return { data: { success: true } }; // handled server-side in webhook
+          return { data: { success: true } };
         default:
           throw new Error(`Unknown function: ${name}`);
       }
