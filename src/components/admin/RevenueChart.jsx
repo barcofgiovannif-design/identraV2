@@ -4,7 +4,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 
 export default function RevenueChart({ purchases }) {
   const monthlyRevenue = purchases.reduce((acc, purchase) => {
-    const month = new Date(purchase.created_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    const month = new Date(purchase.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
     acc[month] = (acc[month] || 0) + purchase.amount;
     return acc;
   }, {});

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { api } from "@/api/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,8 +18,8 @@ export default function CompanyDashboard() {
   useEffect(() => {
     const loadCompany = async () => {
       try {
-        const user = await base44.auth.me();
-        const companies = await base44.entities.Company.filter({ email: user.email });
+        const user = await api.auth.me();
+        const companies = await api.entities.Company.filter({ email: user.email });
         if (companies.length > 0) {
           setCompany(companies[0]);
         }
@@ -34,7 +34,7 @@ export default function CompanyDashboard() {
 
   const { data: cards = [], isLoading } = useQuery({
     queryKey: ['digitalCards', company?.id],
-    queryFn: () => company ? base44.entities.DigitalCard.filter({ company_id: company.id }) : [],
+    queryFn: () => company ? api.entities.DigitalCard.filter({ company_id: company.id }) : [],
     enabled: !!company
   });
 

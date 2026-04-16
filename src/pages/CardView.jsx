@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { api } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Mail, Phone, Linkedin, Twitter, MessageCircle, Download, ExternalLink, Loader2 } from "lucide-react";
@@ -23,7 +23,7 @@ export default function CardView() {
         return;
       }
 
-      const cards = await base44.entities.DigitalCard.filter({ permanent_slug: slug });
+      const cards = await api.entities.DigitalCard.filter({ permanent_slug: slug });
       
       if (cards.length === 0) {
         setLoading(false);
@@ -33,7 +33,7 @@ export default function CardView() {
       const cardData = cards[0];
       setCard(cardData);
 
-      const companies = await base44.entities.Company.filter({ id: cardData.company_id });
+      const companies = await api.entities.Company.filter({ id: cardData.company_id });
       if (companies.length > 0) {
         setCompany(companies[0]);
       }
@@ -48,7 +48,7 @@ export default function CardView() {
   const handleDownloadVCard = async () => {
     setDownloading(true);
     try {
-      const response = await base44.functions.invoke('generateVCard', { card_id: card.id });
+      const response = await api.functions.invoke('generateVCard', { card_id: card.id });
       const blob = new Blob([response.data], { type: 'text/vcard' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');

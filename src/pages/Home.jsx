@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Check, QrCode, Users, Zap, Shield, Sparkles, Loader2, X, UserCircle, LogOut, LogIn } from "lucide-react";
 import { motion } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { api } from "@/api/client";
 
 export default function Home() {
   const [checkoutModal, setCheckoutModal] = useState(null);
@@ -16,13 +16,13 @@ export default function Home() {
   const [currentUser, setCurrentUser] = useState(undefined); // undefined = not yet checked
 
   useEffect(() => {
-    base44.auth.me().then(u => setCurrentUser(u)).catch(() => setCurrentUser(null));
+    api.auth.me().then(u => setCurrentUser(u)).catch(() => setCurrentUser(null));
 
     // If redirected back after login with a plan pending, auto-open checkout
     const params = new URLSearchParams(window.location.search);
     const pendingPlan = params.get('plan');
     if (pendingPlan) {
-      base44.entities.PricingPlan.filter({ is_active: true }).then(dbPlans => {
+      api.entities.PricingPlan.filter({ is_active: true }).then(dbPlans => {
         const dbPlan = dbPlans.find(p => p.name.toLowerCase() === pendingPlan.toLowerCase());
         if (dbPlan) {
           const staticPlans = [
@@ -46,11 +46,11 @@ export default function Home() {
     if (!currentUser) {
       // Redirect to login, come back with plan pre-selected
       const returnUrl = `${window.location.origin}${window.location.pathname}?plan=${encodeURIComponent(plan.name)}`;
-      base44.auth.redirectToLogin(returnUrl);
+      api.auth.redirectToLogin(returnUrl);
       return;
     }
     setPlanLoading(plan.name);
-    const dbPlans = await base44.entities.PricingPlan.filter({ is_active: true });
+    const dbPlans = await api.entities.PricingPlan.filter({ is_active: true });
     const dbPlan = dbPlans.find(p => p.name.toLowerCase() === plan.name.toLowerCase());
     setPlanLoading(null);
     if (!dbPlan) { alert('Plan not found. Please contact support.'); return; }
@@ -62,7 +62,7 @@ export default function Home() {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await base44.functions.invoke('stripeCheckout', {
+      const response = await api.functions.invoke('stripeCheckout', {
         plan_id: checkoutModal.id,
         customer_email: currentUser?.email || formData.email,
         customer_name: formData.company_name,
@@ -155,11 +155,7 @@ export default function Home() {
       {/* Navigation */}
       <nav className="border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <img 
-            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6993ef3c029e3c249b7f556c/bfcfbf9dc_main-identra-logo.png" 
-            alt="Identra" 
-            className="h-8"
-          />
+          <Link to="/" className="text-xl font-bold tracking-tight text-gray-900">Identra</Link>
           <div className="flex gap-3 items-center">
             {currentUser === undefined ? null : currentUser ? (
               <>
@@ -169,13 +165,13 @@ export default function Home() {
                     <span className="hidden sm:inline">{currentUser.full_name || currentUser.email}</span>
                   </Button>
                 </Link>
-                <Button variant="ghost" size="sm" className="gap-2 text-gray-500" onClick={() => base44.auth.logout('/')}>
+                <Button variant="ghost" size="sm" className="gap-2 text-gray-500" onClick={() => api.auth.logout('/')}>
                   <LogOut className="w-4 h-4" />
                   <span className="hidden sm:inline">Logout</span>
                 </Button>
               </>
             ) : (
-              <Button variant="outline" size="sm" className="gap-2" onClick={() => base44.auth.redirectToLogin(window.location.href)}>
+              <Button variant="outline" size="sm" className="gap-2" onClick={() => api.auth.redirectToLogin(window.location.href)}>
                 <LogIn className="w-4 h-4" />
                 Login / Register
               </Button>

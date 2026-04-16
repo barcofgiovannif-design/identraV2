@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { api } from "@/api/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function EditCardModal({ card, companies, onClose }) {
@@ -26,7 +26,7 @@ export default function EditCardModal({ card, companies, onClose }) {
 
   const updateMutation = useMutation({
     mutationFn: async () => {
-      await base44.entities.DigitalCard.update(card.id, formData);
+      await api.entities.DigitalCard.update(card.id, formData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['allCards']);

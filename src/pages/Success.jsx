@@ -4,7 +4,7 @@ import { createPageUrl } from "../utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle, Download } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { api } from "@/api/client";
 import { generateReceiptPdf } from "../utils/generateReceiptPdf";
 
 export default function Success() {
@@ -18,7 +18,7 @@ export default function Success() {
     if (sessionId) {
       const checkPurchase = async () => {
         try {
-          const purchases = await base44.entities.Purchase.filter({ stripe_session_id: sessionId });
+          const purchases = await api.entities.Purchase.filter({ stripe_session_id: sessionId });
           if (purchases && purchases.length > 0) {
             setPurchase(purchases[0]);
           }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { api } from "@/api/client";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "./utils";
 import { Button } from "@/components/ui/button";
@@ -15,20 +15,20 @@ export default function Layout({ children, currentPageName }) {
 
   const loadUser = async () => {
     try {
-      const userData = await base44.auth.me();
+      const userData = await api.auth.me();
       setUser(userData);
-      setIsAdmin(userData?.role === 'admin');
+      setIsAdmin(userData?.role === 'admin' || userData?.role === 'superadmin');
     } catch (error) {
       setUser(null);
     }
   };
 
   const handleLogout = () => {
-    base44.auth.logout();
+    api.auth.logout();
   };
 
   // Public pages (no layout needed)
-  const publicPages = ['Home', 'Login', 'Checkout', 'CardView', 'Demo'];
+  const publicPages = ['Home', 'Login', 'CardView', 'Demo', 'Card', 'Verify', 'Privacy', 'Terms'];
   if (publicPages.includes(currentPageName)) {
     return <>{children}</>;
   }
@@ -42,11 +42,7 @@ export default function Layout({ children, currentPageName }) {
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <Link to={createPageUrl(isAdmin ? 'SuperAdminDashboard' : 'CompanyDashboard')} className="flex items-center">
-              <img 
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6993ef3c029e3c249b7f556c/bfcfbf9dc_main-identra-logo.png" 
-                alt="Identra" 
-                className="h-8"
-              />
+              <span className="text-xl font-bold tracking-tight text-gray-900">Identra</span>
             </Link>
 
             {/* Navigation Links */}

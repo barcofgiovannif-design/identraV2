@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { api } from "@/api/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,14 +21,14 @@ export default function UsersTable({ users, purchases, onRefresh }) {
   });
 
   const getUserPurchases = (u) =>
-    purchases.filter(p => p.customer_email === u.email || p.created_by === u.email);
+    purchases.filter(p => p.customer_email === u.email);
 
   const getUserTotal = (u) =>
     getUserPurchases(u).reduce((sum, p) => sum + (p.amount || 0), 0);
 
   const handleDelete = async (userId) => {
     setDeletingId(userId);
-    await base44.entities.User.delete(userId);
+    await api.entities.User.delete(userId);
     setConfirmDelete(null);
     setDeletingId(null);
     onRefresh?.();
@@ -78,7 +78,7 @@ export default function UsersTable({ users, purchases, onRefresh }) {
                     <Badge variant="outline" className={u.role === 'admin' ? 'border-purple-300 text-purple-700' : 'border-gray-200 text-gray-600'}>
                       {u.role || 'user'}
                     </Badge>
-                    <p className="text-xs text-gray-400 hidden lg:block">{formatDate(u.created_date)}</p>
+                    <p className="text-xs text-gray-400 hidden lg:block">{formatDate(u.created_at)}</p>
                     <Button variant="ghost" size="sm" onClick={() => setExpandedUser(isExpanded ? null : u.id)}>
                       {isExpanded ? <ChevronUp className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </Button>
@@ -108,7 +108,7 @@ export default function UsersTable({ users, purchases, onRefresh }) {
                           <div key={p.id} className="flex justify-between items-center text-sm bg-white rounded-lg p-3 border border-gray-100">
                             <div>
                               <span className="font-medium">{p.plan_name || 'Package'}</span>
-                              <span className="text-gray-400 ml-2">· {p.url_count} cards · {formatDate(p.created_date)}</span>
+                              <span className="text-gray-400 ml-2">· {p.url_count} cards · {formatDate(p.created_at)}</span>
                             </div>
                             <div className="flex items-center gap-2">
                               <span className="font-semibold">${Number(p.amount || 0).toFixed(2)}</span>

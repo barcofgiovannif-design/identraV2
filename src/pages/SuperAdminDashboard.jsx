@@ -1,9 +1,11 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { api } from "@/api/client";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2, Link as LinkIcon, DollarSign, Users, QrCode } from "lucide-react";
+import { Building2, Link as LinkIcon, DollarSign, Users, QrCode, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Navigate } from "react-router-dom";
+import { useAuth } from "@/lib/AuthContext";
 import CompaniesTable from "../components/admin/CompaniesTable";
 import RevenueChart from "../components/admin/RevenueChart";
 import GenerateCardsModal from "../components/admin/GenerateCardsModal";
@@ -14,25 +16,38 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 export default function SuperAdminDashboard() {
   const [showGenerateModal, setShowGenerateModal] = useState(false);
+  const { user, isLoadingAuth } = useAuth();
+
+  if (isLoadingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-gray-900" />
+      </div>
+    );
+  }
+  if (!user) return <Navigate to="/Login" replace />;
+  if (user.role !== 'admin' && user.role !== 'superadmin') {
+    return <Navigate to="/CompanyDashboard" replace />;
+  }
 
   const { data: users = [], refetch: refetchUsers } = useQuery({
     queryKey: ['allUsers'],
-    queryFn: () => base44.entities.User.list()
+    queryFn: () => api.entities.User.list()
   });
 
   const { data: companies = [] } = useQuery({
     queryKey: ['companies'],
-    queryFn: () => base44.entities.Company.list()
+    queryFn: () => api.entities.Company.list()
   });
 
   const { data: purchases = [] } = useQuery({
     queryKey: ['purchases'],
-    queryFn: () => base44.entities.Purchase.list('-created_date')
+    queryFn: () => api.entities.Purchase.list('-created_at')
   });
 
   const { data: allCards = [] } = useQuery({
     queryKey: ['allCards'],
-    queryFn: () => base44.entities.DigitalCard.list()
+    queryFn: () => api.entities.DigitalCard.list()
   });
 
   const totalRevenue = purchases.reduce((sum, p) => sum + (p.amount || 0), 0);

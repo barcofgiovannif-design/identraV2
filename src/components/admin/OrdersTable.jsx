@@ -72,7 +72,7 @@ export default function OrdersTable({ purchases, companies }) {
                   <td className="py-3 px-2 text-gray-700">{p.plan_name || '-'}</td>
                   <td className="py-3 px-2 text-gray-700">{p.url_count || 0}</td>
                   <td className="py-3 px-2 font-semibold text-gray-900">${Number(p.amount || 0).toFixed(2)}</td>
-                  <td className="py-3 px-2 text-gray-500">{formatDate(p.created_date)}</td>
+                  <td className="py-3 px-2 text-gray-500">{formatDate(p.created_at)}</td>
                   <td className="py-3 px-2">
                     <Badge
                       className={

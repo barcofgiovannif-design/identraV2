@@ -73,8 +73,8 @@ export function generateReceiptPdf(purchase) {
   // ── Receipt Details ──────────────────────────────────────
   sectionTitle('Receipt Details');
 
-  const receiptDate = purchase.created_date
-    ? new Date(purchase.created_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+  const receiptDate = purchase.created_at
+    ? new Date(purchase.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
     : new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
   row('Invoice Number', purchase.invoice_number || 'N/A');

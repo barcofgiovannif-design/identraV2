@@ -1,5 +1,5 @@
 import React from "react";
-import { base44 } from "@/api/base44Client";
+import { api } from "@/api/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ export default function CompaniesTable({ companies }) {
 
   const toggleStatusMutation = useMutation({
     mutationFn: ({ id, status }) => 
-      base44.entities.Company.update(id, { status: status === 'active' ? 'suspended' : 'active' }),
+      api.entities.Company.update(id, { status: status === 'active' ? 'suspended' : 'active' }),
     onSuccess: () => {
       queryClient.invalidateQueries(['companies']);
     }

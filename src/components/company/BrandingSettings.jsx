@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { api } from "@/api/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ export default function BrandingSettings({ company }) {
   const queryClient = useQueryClient();
 
   const updateBrandingMutation = useMutation({
-    mutationFn: (data) => base44.entities.Company.update(company.id, data),
+    mutationFn: (data) => api.entities.Company.update(company.id, data),
     onSuccess: () => {
       queryClient.invalidateQueries(['company']);
     }
@@ -25,7 +25,7 @@ export default function BrandingSettings({ company }) {
 
     setUploading(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { file_url } = await api.integrations.Core.UploadFile({ file });
       updateBrandingMutation.mutate({ logo_url: file_url });
     } catch (error) {
       alert("Failed to upload logo");

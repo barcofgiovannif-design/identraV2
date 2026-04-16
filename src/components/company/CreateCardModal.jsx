@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { api } from "@/api/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,7 +28,7 @@ export default function CreateCardModal({ company, onClose, onSuccess }) {
 
   const createCardMutation = useMutation({
     mutationFn: async (data) => {
-      const response = await base44.functions.invoke("createDigitalCard", data);
+      const response = await api.functions.invoke("createDigitalCard", data);
       return response.data;
     },
     onSuccess: () => {

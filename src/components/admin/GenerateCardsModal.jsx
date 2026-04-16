@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, QrCode, ExternalLink } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { api } from "@/api/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function GenerateCardsModal({ isOpen, onClose, companies }) {
@@ -21,7 +21,7 @@ export default function GenerateCardsModal({ isOpen, onClose, companies }) {
 
   const generateMutation = useMutation({
     mutationFn: async () => {
-      const response = await base44.functions.invoke('generateEmptyCards', {
+      const response = await api.functions.invoke('generateEmptyCards', {
         company_id: selectedCompanyId,
         quantity: parseInt(quantity)
       });

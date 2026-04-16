@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { api } from "@/api/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,12 +17,12 @@ export default function AllCardsTable({ cards, companies }) {
   const deleteMutation = useMutation({
     mutationFn: async (cardId) => {
       const card = cards.find(c => c.id === cardId);
-      await base44.entities.DigitalCard.delete(cardId);
+      await api.entities.DigitalCard.delete(cardId);
       
       // Update company used_urls
       const company = companies.find(c => c.id === card.company_id);
       if (company) {
-        await base44.entities.Company.update(card.company_id, {
+        await api.entities.Company.update(card.company_id, {
           used_urls: Math.max(0, company.used_urls - 1)
         });
       }

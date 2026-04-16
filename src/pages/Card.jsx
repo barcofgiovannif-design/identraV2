@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { api } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Mail, Phone, Linkedin, Twitter, MessageCircle, Download, ExternalLink, Loader2, Instagram, Facebook } from "lucide-react";
@@ -24,7 +24,7 @@ export default function CardPage() {
       }
 
       // Use public endpoint to fetch card data without authentication
-      const response = await base44.functions.invoke('getPublicCard', { slug });
+      const response = await api.functions.invoke('getPublicCard', { slug });
       
       if (!response.data || !response.data.card) {
         setLoading(false);
@@ -43,7 +43,7 @@ export default function CardPage() {
   const handleDownloadVCard = async () => {
     setDownloading(true);
     try {
-      const response = await base44.functions.invoke('generateVCard', { card_id: card.id });
+      const response = await api.functions.invoke('generateVCard', { card_id: card.id });
       const blob = new Blob([response.data], { type: 'text/vcard' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');

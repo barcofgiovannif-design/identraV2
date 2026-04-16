@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { api } from "@/api/client";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,31 +18,31 @@ export default function Account() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
-    base44.auth.me().then(u => {
+    api.auth.me().then(u => {
       setUser(u);
       setFormData({ full_name: u?.full_name || "" });
     }).catch(() => {
-      base44.auth.redirectToLogin(window.location.href);
+      api.auth.redirectToLogin(window.location.href);
     });
   }, []);
 
   const { data: purchases = [] } = useQuery({
     queryKey: ['myPurchases', user?.email],
     enabled: !!user?.email,
-    queryFn: () => base44.entities.Purchase.filter({ customer_email: user.email }, '-created_date')
+    queryFn: () => api.entities.Purchase.filter({ customer_email: user.email }, '-created_at')
   });
 
   const handleSave = async (e) => {
     e.preventDefault();
     setSaving(true);
-    await base44.auth.updateMe({ full_name: formData.full_name });
+    await api.auth.updateMe({ full_name: formData.full_name });
     setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };
 
   const handleDeleteAccount = async () => {
-    await base44.auth.logout('/');
+    await api.auth.logout('/');
   };
 
   const formatDate = (d) => d ? new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '-';
@@ -147,7 +147,7 @@ export default function Account() {
                       <div key={p.id} className="flex items-center justify-between p-4 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors">
                         <div>
                           <p className="font-semibold text-gray-900">{p.plan_name || 'Package'} — {p.url_count} cards</p>
-                          <p className="text-sm text-gray-500">{formatDate(p.created_date)} · {p.invoice_number || p.stripe_session_id?.slice(0, 16) || 'N/A'}</p>
+                          <p className="text-sm text-gray-500">{formatDate(p.created_at)} · {p.invoice_number || p.stripe_session_id?.slice(0, 16) || 'N/A'}</p>
                         </div>
                         <div className="flex items-center gap-3">
                           <span className="font-bold text-gray-900">${Number(p.amount || 0).toFixed(2)}</span>

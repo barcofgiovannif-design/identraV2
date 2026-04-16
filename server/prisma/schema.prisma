@@ -1,0 +1,124 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String   @id @default(cuid())
+  email      String   @unique
+  full_name  String?
+  role       Role     @default(user)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  sessions   Session[]
+}
+
+enum Role {
+  user
+  admin
+  superadmin
+}
+
+model Session {
+  id         String   @id @default(cuid())
+  user_id    String
+  token      String   @unique
+  expires_at DateTime
+  created_at DateTime @default(now())
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+}
+
+model MagicToken {
+  id         String   @id @default(cuid())
+  token      String   @unique
+  email      String
+  expires_at DateTime
+  used_at    DateTime?
+  created_at DateTime @default(now())
+
+  @@index([email])
+}
+
+model Company {
+  id                 String   @id @default(cuid())
+  company_name       String
+  email              String   @unique
+  logo_url           String?
+  brand_color        String?  @default("#000000")
+  purchased_urls     Int      @default(0)
+  used_urls          Int      @default(0)
+  status             String   @default("active")
+  stripe_customer_id String?
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+  cards              DigitalCard[]
+  purchases          Purchase[]
+
+  @@index([email])
+}
+
+model DigitalCard {
+  id              String   @id @default(cuid())
+  company_id      String
+  permanent_slug  String   @unique
+  full_name       String
+  title           String?
+  company_name    String?
+  phone           String?
+  email           String?
+  overview        String?  @db.Text
+  social_links    Json?
+  messaging_links Json?
+  qr_code_url     String?
+  status          String   @default("active")
+  template        String?  @default("modern")
+  font_style      String?  @default("sans")
+  custom_color    String?  @default("#000000")
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+  company         Company  @relation(fields: [company_id], references: [id], onDelete: Cascade)
+
+  @@index([company_id])
+  @@index([permanent_slug])
+}
+
+model Purchase {
+  id                     String   @id @default(cuid())
+  company_id             String?
+  plan_id                String?
+  plan_name              String?
+  customer_name          String?
+  customer_email         String?
+  invoice_number         String?
+  amount                 Float
+  url_count              Int
+  stripe_session_id      String?
+  stripe_payment_intent  String?
+  status                 String   @default("pending")
+  purchase_type          String?
+  created_at             DateTime @default(now())
+  updated_at             DateTime @updatedAt
+  company                Company? @relation(fields: [company_id], references: [id], onDelete: SetNull)
+
+  @@index([customer_email])
+  @@index([stripe_session_id])
+}
+
+model PricingPlan {
+  id          String   @id @default(cuid())
+  name        String
+  price       Float
+  url_count   Int
+  description String?  @db.Text
+  features    Json?
+  is_active   Boolean  @default(true)
+  sort_order  Int      @default(0)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
